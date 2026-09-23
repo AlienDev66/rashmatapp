@@ -79,12 +79,12 @@ export default function MoreScreen() {
         </Pressable>
 
         <View style={styles.stats}>
-          <Stat value={profile?.age != null ? String(profile.age) : "—"} unit="yr" />
+          <Stat value={String(profile?.xp ?? 0)} unit="XP" />
+          <Stat value={String(enrollments.length)} unit="camps" />
           <Stat
             value={profile?.weight_kg != null ? String(profile.weight_kg) : "—"}
             unit="kg"
           />
-          <Stat value={String(profile?.kcal_goal ?? 2000)} unit="kcal" />
         </View>
 
         <Text style={styles.section}>YOUR PROGRAMS</Text>

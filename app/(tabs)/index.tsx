@@ -182,7 +182,7 @@ export default function HomeScreen() {
                   <Text style={styles.why}>Why 4?</Text>
                 </View>
                 <Text style={styles.accelSub}>
-                  {weeklyDone}/4 workouts this week. Keep going.
+                  {weeklyDone}/4 sessions this week. Keep drilling.
                 </Text>
                 <View style={styles.segments}>
                   {[0, 1, 2, 3].map((i) => (

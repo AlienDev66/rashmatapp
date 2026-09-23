@@ -28,7 +28,7 @@ export default function WorkoutCompleteScreen() {
         empty={!id || !session}
         emptyTone="training"
         emptyTitle="Session not found"
-        emptyMessage="We couldn’t load this workout summary."
+        emptyMessage="We couldn’t load this session summary."
         emptyActionLabel="Back to home  →"
         emptyOnAction={() => router.replace("/(tabs)")}
         onRetry={reload}
