@@ -131,11 +131,14 @@ export type CatalogSnapshot = {
 
 export async function fetchCatalog(): Promise<CatalogSnapshot> {
   if (!isSupabaseConfigured) {
-    return {
-      creators: mockCreators,
-      programs: mockPrograms,
-      sessions: mockSessions,
-    };
+    if (__DEV__) {
+      return {
+        creators: mockCreators,
+        programs: mockPrograms,
+        sessions: mockSessions,
+      };
+    }
+    return { creators: [], programs: [], sessions: [] };
   }
 
   const cached = await cacheGet<CatalogSnapshot>("catalog");
@@ -177,34 +180,39 @@ export async function fetchCatalog(): Promise<CatalogSnapshot> {
     return snapshot;
   } catch (e) {
     if (cached) return cached;
-    // Offline / empty project → mock so UI still works
-    if (__DEV__) console.warn("[RASHMAT] catalog fetch failed, using mock", e);
-    return {
-      creators: mockCreators,
-      programs: mockPrograms,
-      sessions: mockSessions,
-    };
+    // Dev-only mock so UI works without Supabase; production stays empty/erroring honestly
+    if (__DEV__) {
+      console.warn("[RASHMAT] catalog fetch failed, using mock", e);
+      return {
+        creators: mockCreators,
+        programs: mockPrograms,
+        sessions: mockSessions,
+      };
+    }
+    throw e instanceof Error ? e : new Error("Catalog unavailable");
   }
 }
 
 export async function fetchProgram(id: string): Promise<Program | null> {
   const catalog = await fetchCatalog();
-  return catalog.programs.find((p) => p.id === id) ?? mockGetProgram(id) ?? null;
+  const hit = catalog.programs.find((p) => p.id === id);
+  if (hit) return hit;
+  return __DEV__ ? mockGetProgram(id) ?? null : null;
 }
 
 export async function fetchCreator(id: string): Promise<Creator | null> {
   const catalog = await fetchCatalog();
-  return catalog.creators.find((c) => c.id === id) ?? mockGetCreator(id) ?? null;
+  const hit = catalog.creators.find((c) => c.id === id);
+  if (hit) return hit;
+  return __DEV__ ? mockGetCreator(id) ?? null : null;
 }
 
 export async function fetchSession(id: string): Promise<WorkoutSession | null> {
   if (!id) return null;
   const catalog = await fetchCatalog();
-  return (
-    catalog.sessions.find((s) => s.id === id) ??
-    mockGetSession(id) ??
-    null
-  );
+  const hit = catalog.sessions.find((s) => s.id === id);
+  if (hit) return hit;
+  return __DEV__ ? mockGetSession(id) ?? null : null;
 }
 
 export function sessionsForProgram(sessions: WorkoutSession[], programId: string) {
@@ -221,7 +229,7 @@ export function sessionsForProgram(sessions: WorkoutSession[], programId: string
 }
 
 export function resumeFromSessions(sessions: WorkoutSession[]) {
-  if (sessions.length === 0) return mockResume;
+  if (sessions.length === 0) return __DEV__ ? mockResume : [];
   return sessions.slice(0, 2).map((s) => ({
     id: s.id,
     title: s.title,
