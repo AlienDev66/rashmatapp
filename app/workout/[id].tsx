@@ -2,7 +2,7 @@ import { BackButton } from "@/src/components/ui/BackButton";
 import { Button } from "@/src/components/ui/Button";
 import { EmptyState } from "@/src/components/ui/EmptyState";
 import { QueryGate } from "@/src/components/ui/QueryGate";
-import { enrollProgram } from "@/src/data/progress";
+import { enrollProgram, loadSessionProgress } from "@/src/data/progress";
 import { useCatalog } from "@/src/hooks/useCatalog";
 import { useProgress } from "@/src/hooks/useProgress";
 import { useWorkoutSession } from "@/src/hooks/useResource";
@@ -12,9 +12,9 @@ import { useAuth } from "@/src/providers/AuthProvider";
 import { colors, fonts, radii, spacing, typography } from "@/src/theme";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { router, useLocalSearchParams } from "expo-router";
-import { Download } from "lucide-react-native";
-import { useEffect, useState } from "react";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { Clock3, Download, Layers, Play } from "lucide-react-native";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import {
   Alert,
   Pressable,
@@ -35,6 +35,7 @@ export default function WorkoutPreviewScreen() {
   const [downloading, setDownloading] = useState(false);
   const [downloadPct, setDownloadPct] = useState(0);
   const [offlineReady, setOfflineReady] = useState(false);
+  const [canResume, setCanResume] = useState(false);
   const insets = useSafeAreaInsets();
 
   const program = programs.find((p) => p.id === session?.programId);
@@ -48,6 +49,19 @@ export default function WorkoutPreviewScreen() {
       session.exercises.map((e) => e.id),
     ).then(setOfflineReady);
   }, [session]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!id) return;
+      let cancelled = false;
+      void loadSessionProgress(id).then((p) => {
+        if (!cancelled) setCanResume(!!p);
+      });
+      return () => {
+        cancelled = true;
+      };
+    }, [id]),
+  );
 
   const ensureAccess = () => {
     if (program?.isPremium && !enrolled) {
@@ -132,7 +146,7 @@ export default function WorkoutPreviewScreen() {
           <>
             <ScrollView
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 140 }}
+              contentContainerStyle={{ paddingBottom: 150 }}
             >
               <View style={styles.hero}>
                 <Image
@@ -141,31 +155,50 @@ export default function WorkoutPreviewScreen() {
                   contentFit="cover"
                 />
                 <LinearGradient
-                  colors={["rgba(0,0,0,0.2)", "#000"]}
+                  colors={["rgba(20,17,17,0.15)", "rgba(20,17,17,0.55)", "#141111"]}
+                  locations={[0, 0.45, 1]}
                   style={StyleSheet.absoluteFill}
                 />
                 <View style={[styles.back, { top: insets.top + 8 }]}>
                   <BackButton />
                 </View>
+                {canStart ? (
+                  <Pressable
+                    style={[styles.downloadIcon, { top: insets.top + 8 }]}
+                    onPress={() => void onDownload()}
+                    disabled={downloading}
+                    hitSlop={8}
+                  >
+                    <Download
+                      color={offlineReady ? colors.accent : colors.white}
+                      size={18}
+                    />
+                    {downloading ? (
+                      <Text style={styles.downloadPct}>{downloadPct}%</Text>
+                    ) : null}
+                  </Pressable>
+                ) : null}
                 <View style={styles.heroText}>
-                  {program?.isPremium ? (
-                    <Text style={styles.proBadge}>PRO</Text>
+                  {program ? (
+                    <Text style={styles.programLabel} numberOfLines={1}>
+                      {program.title}
+                    </Text>
                   ) : null}
                   <Text style={styles.title}>{session.title}</Text>
                   <Text style={styles.desc}>{session.description}</Text>
-                  <View style={styles.tags}>
-                    {session.tags.map((t) => (
-                      <View key={t} style={styles.tag}>
-                        <Text style={styles.tagText}>{t}</Text>
-                      </View>
-                    ))}
-                  </View>
                 </View>
               </View>
 
-              <View style={styles.banner}>
-                <Text style={styles.bannerText}>
-                  {session.minutes} MIN | {setCount} SETS | {session.exercises.length} DRILLS
+              <View style={styles.metaRow}>
+                <MetaChip icon={<Clock3 color={colors.black} size={14} />} label={`${session.minutes} min`} />
+                <MetaChip icon={<Layers color={colors.black} size={14} />} label={`${session.exercises.length} drills`} />
+                <MetaChip icon={<Play color={colors.black} size={14} />} label={`${setCount} sets`} />
+              </View>
+
+              <View style={styles.flowHint}>
+                <Text style={styles.flowTitle}>How it works</Text>
+                <Text style={styles.flowBody}>
+                  Watch the drill · hit Complete set · rest timer · next set. Videos loop so you can match the movement.
                 </Text>
               </View>
 
@@ -180,42 +213,39 @@ export default function WorkoutPreviewScreen() {
                   />
                 ) : (
                   <View style={{ gap: 10 }}>
-                    {session.exercises.map((ex, i) => (
-                      <View key={ex.id} style={styles.ex}>
-                        <Text style={styles.exNum}>{i + 1}</Text>
-                        <Image source={{ uri: ex.thumbnailUrl }} style={styles.thumb} />
-                        <View style={{ flex: 1 }}>
-                          <Text style={styles.exName}>{ex.name}</Text>
-                          <View style={styles.reps}>
-                            <Text style={styles.repsText}>{ex.reps}</Text>
+                    {session.exercises.map((ex, i) => {
+                      const sets = Math.max(parseRepScheme(ex.reps).length, 1);
+                      return (
+                        <View key={ex.id} style={styles.ex}>
+                          <Text style={styles.exNum}>{i + 1}</Text>
+                          <Image source={{ uri: ex.thumbnailUrl }} style={styles.thumb} />
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.exName}>{ex.name}</Text>
+                            <Text style={styles.exMeta}>
+                              {ex.reps}
+                              {"  ·  "}
+                              {sets} set{sets === 1 ? "" : "s"}
+                              {"  ·  "}
+                              {ex.restSeconds ?? 60}s rest
+                            </Text>
                           </View>
                         </View>
-                      </View>
-                    ))}
+                      );
+                    })}
                   </View>
                 )}
               </View>
             </ScrollView>
 
             <View style={[styles.fabWrap, { paddingBottom: insets.bottom + 12 }]}>
-              {canStart ? (
-                <Pressable
-                  style={styles.downloadBtn}
-                  onPress={onDownload}
-                  disabled={downloading}
-                >
-                  <Download color={colors.white} size={18} />
-                  <Text style={styles.downloadText}>
-                    {downloading
-                      ? `${downloadPct}%`
-                      : offlineReady
-                        ? "Downloaded"
-                        : "Download"}
-                  </Text>
-                </Pressable>
-              ) : null}
               <Button
-                label={canStart ? "Start session  →" : "Drills unavailable"}
+                label={
+                  !canStart
+                    ? "Drills unavailable"
+                    : canResume
+                      ? "Resume session  →"
+                      : "Start session  →"
+                }
                 variant="accent"
                 loading={starting}
                 disabled={!canStart || starting}
@@ -230,54 +260,98 @@ export default function WorkoutPreviewScreen() {
   );
 }
 
+function MetaChip({ icon, label }: { icon: ReactNode; label: string }) {
+  return (
+    <View style={styles.metaChip}>
+      {icon}
+      <Text style={styles.metaChipText}>{label}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.black },
-  hero: { height: 300, justifyContent: "flex-end" },
+  hero: { height: 320, justifyContent: "flex-end" },
   back: { position: "absolute", left: spacing.lg, zIndex: 2 },
-  heroText: { padding: spacing.xl },
-  proBadge: {
-    alignSelf: "flex-start",
-    color: colors.black,
-    backgroundColor: colors.accent,
-    fontFamily: fonts.poppinsBold,
+  downloadIcon: {
+    position: "absolute",
+    right: spacing.lg,
+    zIndex: 2,
+    minWidth: 40,
+    height: 40,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 4,
+  },
+  downloadPct: {
+    color: colors.white,
+    fontFamily: fonts.poppinsMedium,
     fontSize: 11,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    marginBottom: 8,
-    overflow: "hidden",
+  },
+  heroText: { paddingHorizontal: spacing.xl, paddingBottom: spacing.lg },
+  programLabel: {
+    color: colors.accent,
+    fontFamily: fonts.poppinsMedium,
+    fontSize: 12,
+    marginBottom: 6,
   },
   title: {
     color: colors.white,
     fontFamily: fonts.alumniBoldItalic,
-    fontSize: 26,
-    lineHeight: 30,
+    fontSize: 34,
+    lineHeight: 36,
   },
   desc: {
-    color: "rgba(255,255,255,0.85)",
+    color: "rgba(255,255,255,0.82)",
     fontFamily: fonts.poppinsRegular,
-    marginTop: 8,
-    fontSize: 13,
-    lineHeight: 18,
+    marginTop: 10,
+    fontSize: 14,
+    lineHeight: 20,
   },
-  tags: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
-  tag: {
-    backgroundColor: colors.pill,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
+  metaRow: {
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: spacing.xl,
+    marginTop: 4,
   },
-  tagText: { color: colors.white, fontFamily: fonts.poppinsMedium, fontSize: 11 },
-  banner: {
-    backgroundColor: colors.accent,
-    paddingVertical: 10,
+  metaChip: {
+    flexDirection: "row",
     alignItems: "center",
+    gap: 6,
+    backgroundColor: colors.accent,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radii.pill,
   },
-  bannerText: {
-    ...typography.section,
+  metaChipText: {
     color: colors.black,
+    fontFamily: fonts.poppinsSemiBold,
     fontSize: 12,
-    letterSpacing: 1,
+  },
+  flowHint: {
+    marginTop: spacing.xl,
+    marginHorizontal: spacing.xl,
+    padding: spacing.lg,
+    borderRadius: radii.lg,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  flowTitle: {
+    color: colors.white,
+    fontFamily: fonts.poppinsSemiBold,
+    fontSize: 13,
+  },
+  flowBody: {
+    color: colors.textMuted,
+    fontFamily: fonts.poppinsRegular,
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 6,
   },
   body: { padding: spacing.xl },
   section: {
@@ -296,43 +370,33 @@ const styles = StyleSheet.create({
   exNum: {
     color: colors.accent,
     fontFamily: fonts.alumniBoldItalic,
-    fontSize: 20,
-    width: 22,
+    fontSize: 22,
+    width: 24,
     textAlign: "center",
   },
-  thumb: { width: 56, height: 56, borderRadius: radii.md },
-  exName: { color: colors.white, fontFamily: fonts.poppinsSemiBold },
-  reps: {
-    alignSelf: "flex-start",
-    marginTop: 6,
-    backgroundColor: colors.surfaceElevated,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+  thumb: { width: 60, height: 60, borderRadius: radii.md },
+  exName: {
+    color: colors.white,
+    fontFamily: fonts.poppinsSemiBold,
+    fontSize: 14,
   },
-  repsText: { color: colors.textMuted, fontFamily: fonts.poppinsMedium, fontSize: 11 },
+  exMeta: {
+    color: colors.textMuted,
+    fontFamily: fonts.poppinsRegular,
+    fontSize: 12,
+    marginTop: 4,
+    lineHeight: 16,
+  },
   fabWrap: {
     position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
     alignItems: "center",
-    gap: 10,
     paddingHorizontal: spacing.xl,
-    backgroundColor: "transparent",
+    paddingTop: 16,
+    backgroundColor: "rgba(20,17,17,0.92)",
   },
-  downloadBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: colors.surface,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  downloadText: { color: colors.white, fontFamily: fonts.poppinsMedium, fontSize: 13 },
   fab: {
     alignSelf: "stretch",
     paddingVertical: 16,

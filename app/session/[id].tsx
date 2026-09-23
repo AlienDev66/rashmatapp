@@ -8,7 +8,6 @@ import {
   saveSessionProgress,
 } from "@/src/data/progress";
 import { useWorkoutSession } from "@/src/hooks/useResource";
-import { useAuth } from "@/src/providers/AuthProvider";
 import {
   estimateSessionXp,
   formatRepsLabel,
@@ -16,10 +15,12 @@ import {
   parseRepScheme,
   type PlaybackSpeed,
 } from "@/src/lib/workoutMath";
+import { useAuth } from "@/src/providers/AuthProvider";
 import { colors, fonts, radii, spacing } from "@/src/theme";
+import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
-import { ChevronsLeft, ChevronsRight, Play, X } from "lucide-react-native";
+import { Check, Pause, Play, X } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
@@ -42,13 +43,14 @@ type Phase = "work" | "rest";
 export default function SessionPlayerScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: session, loading, error, reload } = useWorkoutSession(id);
-  const { user, refreshProfile } = useAuth();
+  const { refreshProfile } = useAuth();
   const insets = useSafeAreaInsets();
 
   const [exerciseIndex, setExerciseIndex] = useState(0);
   const [setIndex, setSetIndex] = useState(0);
   const [phase, setPhase] = useState<Phase>("work");
   const [restLeft, setRestLeft] = useState(0);
+  const [restTotal, setRestTotal] = useState(60);
   const [playing, setPlaying] = useState(true);
   const [speed, setSpeed] = useState<PlaybackSpeed>(1);
   const [elapsed, setElapsed] = useState(0);
@@ -59,51 +61,79 @@ export default function SessionPlayerScreen() {
   const [hydrated, setHydrated] = useState(false);
   const startedAt = useRef(Date.now());
   const baseElapsed = useRef(0);
+  /** Applied when rest ends / is skipped — keeps "Up next" accurate during rest. */
+  const afterRestRef = useRef<(() => void) | null>(null);
 
   const exercise = session?.exercises[exerciseIndex];
-  const scheme = useMemo(
-    () => parseRepScheme(exercise?.reps),
-    [exercise?.reps],
-  );
-  const totalSets = scheme.length;
+  const scheme = useMemo(() => parseRepScheme(exercise?.reps), [exercise?.reps]);
+  const totalSets = Math.max(scheme.length, 1);
   const targetReps = scheme[setIndex] ?? scheme[0] ?? 8;
   const nextExercise = session?.exercises[exerciseIndex + 1];
   const isLastSet = setIndex >= totalSets - 1;
   const isLastExercise = !!session && exerciseIndex >= session.exercises.length - 1;
+  const isRounds = /rounds?/i.test(exercise?.reps ?? "");
 
-  const nextLabel = useMemo(() => {
+  const totalSteps = useMemo(() => {
+    if (!session) return 1;
+    return session.exercises.reduce((n, ex) => n + Math.max(parseRepScheme(ex.reps).length, 1), 0);
+  }, [session]);
+
+  const completedSteps = useMemo(() => {
+    if (!session) return 0;
+    let n = 0;
+    for (let i = 0; i < exerciseIndex; i++) {
+      n += Math.max(parseRepScheme(session.exercises[i]?.reps).length, 1);
+    }
+    return n + setIndex + (phase === "rest" ? 1 : 0);
+  }, [session, exerciseIndex, setIndex, phase]);
+
+  const progress = Math.min(1, completedSteps / Math.max(totalSteps, 1));
+
+  const upNext = useMemo(() => {
     if (phase === "rest") {
-      if (!isLastSet) return `${exercise?.name ?? "Exercise"} · Set ${setIndex + 2}`;
-      if (nextExercise) return nextExercise.name;
-      return "Finish";
+      if (!isLastSet) {
+        return {
+          title: exercise?.name ?? "Drill",
+          meta: `${isRounds ? "Round" : "Set"} ${setIndex + 2} of ${totalSets}`,
+        };
+      }
+      if (nextExercise) {
+        return {
+          title: nextExercise.name,
+          meta: formatRepsLabel(parseRepScheme(nextExercise.reps)[0] ?? 8, nextExercise.reps),
+        };
+      }
+      return { title: "Session complete", meta: "Finish & log XP" };
     }
     if (!isLastSet) {
-      return `Set ${setIndex + 2} · ${formatRepsLabel(scheme[setIndex + 1] ?? targetReps, exercise?.reps)}`;
+      return {
+        title: "Next set",
+        meta: formatRepsLabel(scheme[setIndex + 1] ?? targetReps, exercise?.reps),
+      };
     }
-    if (nextExercise) return nextExercise.name;
-    return "Finish session";
+    if (nextExercise) {
+      return { title: nextExercise.name, meta: "Next drill" };
+    }
+    return { title: "Finish session", meta: "Last set" };
   }, [
     phase,
     isLastSet,
-    exercise?.name,
-    exercise?.reps,
+    exercise,
     setIndex,
+    totalSets,
+    isRounds,
     nextExercise,
     scheme,
     targetReps,
   ]);
 
-  const nextMeta = useMemo(() => {
-    if (phase === "rest") return `Rest ${restLeft}s`;
-    if (!isLastSet) return formatRepsLabel(scheme[setIndex + 1] ?? targetReps, exercise?.reps);
-    if (nextExercise) {
-      const n = parseRepScheme(nextExercise.reps);
-      return formatRepsLabel(n[0] ?? 8, nextExercise.reps);
-    }
-    return "Done";
-  }, [phase, restLeft, isLastSet, scheme, setIndex, targetReps, nextExercise, exercise?.reps]);
+  const primaryLabel = useMemo(() => {
+    if (phase === "rest") return "Start next";
+    if (isLastSet && isLastExercise) return "Finish session";
+    if (isLastSet) return "Complete drill";
+    return "Complete set";
+  }, [phase, isLastSet, isLastExercise]);
 
-  // Reset player state when navigating to a different session
   useEffect(() => {
     setExerciseIndex(0);
     setSetIndex(0);
@@ -117,28 +147,23 @@ export default function SessionPlayerScreen() {
     setHydrated(false);
     baseElapsed.current = 0;
     startedAt.current = Date.now();
+    afterRestRef.current = null;
   }, [id]);
 
-  // Hydrate partial progress once per session load
   useEffect(() => {
     if (!session || hydrated) return;
     let cancelled = false;
     const run = async () => {
-      const progress = await loadSessionProgress(session.id);
+      const progressRow = await loadSessionProgress(session.id);
       if (cancelled) return;
-      if (progress && session.exercises.length > 0) {
-        setExerciseIndex(
-          Math.min(progress.exerciseIndex, Math.max(session.exercises.length - 1, 0)),
-        );
-        const schemeLen = parseRepScheme(
-          session.exercises[
-            Math.min(progress.exerciseIndex, session.exercises.length - 1)
-          ]?.reps,
-        ).length;
-        setSetIndex(Math.min(progress.setIndex, Math.max(schemeLen - 1, 0)));
-        baseElapsed.current = progress.elapsedSeconds;
+      if (progressRow && session.exercises.length > 0) {
+        const ei = Math.min(progressRow.exerciseIndex, Math.max(session.exercises.length - 1, 0));
+        setExerciseIndex(ei);
+        const schemeLen = parseRepScheme(session.exercises[ei]?.reps).length;
+        setSetIndex(Math.min(progressRow.setIndex, Math.max(schemeLen - 1, 0)));
+        baseElapsed.current = progressRow.elapsedSeconds;
         startedAt.current = Date.now();
-        setElapsed(progress.elapsedSeconds);
+        setElapsed(progressRow.elapsedSeconds);
       }
       setHydrated(true);
     };
@@ -173,6 +198,9 @@ export default function SessionPlayerScreen() {
   useEffect(() => {
     if (phase !== "rest") return;
     if (restLeft <= 0) {
+      afterRestRef.current?.();
+      afterRestRef.current = null;
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setPhase("work");
       setPlaying(true);
       return;
@@ -197,7 +225,6 @@ export default function SessionPlayerScreen() {
     [session, exerciseIndex, setIndex],
   );
 
-  // Autosave every 15s
   useEffect(() => {
     if (!session || !hydrated) return;
     const t = setInterval(() => {
@@ -206,9 +233,19 @@ export default function SessionPlayerScreen() {
     return () => clearInterval(t);
   }, [session, hydrated, persist]);
 
+  const beginRest = (seconds: number) => {
+    const rest = Math.max(15, seconds);
+    setRestTotal(rest);
+    setRestLeft(rest);
+    setPhase("rest");
+    setPlaying(false);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  };
+
   const finishWorkout = async () => {
     if (!session || finishing) return;
     setFinishing(true);
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     const duration =
       baseElapsed.current + Math.floor((Date.now() - startedAt.current) / 1000);
     const xpHint = estimateSessionXp({ setsLogged, durationSeconds: duration });
@@ -224,7 +261,7 @@ export default function SessionPlayerScreen() {
     try {
       await refreshProfile();
     } catch {
-      // profile refresh is best-effort
+      /* best-effort */
     }
     router.replace({
       pathname: "/workout-complete",
@@ -243,35 +280,35 @@ export default function SessionPlayerScreen() {
     });
     setSetsLogged((n) => n + 1);
     if (maxReps == null || reps > maxReps) setMaxReps(reps);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    if (!isLastSet) {
-      const rest = exercise.restSeconds ?? 60;
-      setSetIndex((s) => s + 1);
-      setPhase("rest");
-      setRestLeft(rest);
-      setPlaying(false);
-      void persist("in_progress");
+    if (isLastSet && isLastExercise) {
+      await finishWorkout();
       return;
     }
 
-    if (!isLastExercise) {
-      const rest = exercise.restSeconds ?? 60;
-      setExerciseIndex((i) => i + 1);
-      setSetIndex(0);
-      setPhase("rest");
-      setRestLeft(rest);
-      setPlaying(false);
+    const advanceToNextSet = !isLastSet;
+    const nextExerciseIndex = exerciseIndex + 1;
+    afterRestRef.current = () => {
+      if (advanceToNextSet) {
+        setSetIndex((s) => s + 1);
+      } else {
+        setExerciseIndex(nextExerciseIndex);
+        setSetIndex(0);
+      }
       void persist("in_progress");
-      return;
-    }
+    };
 
-    await finishWorkout();
+    beginRest(exercise.restSeconds ?? 60);
   };
 
   const skipRest = () => {
+    afterRestRef.current?.();
+    afterRestRef.current = null;
     setRestLeft(0);
     setPhase("work");
     setPlaying(true);
+    void Haptics.selectionAsync();
   };
 
   const onAdvance = () => {
@@ -283,7 +320,7 @@ export default function SessionPlayerScreen() {
   };
 
   const onExit = () => {
-    Alert.alert("Leave session?", "Your progress will be saved so you can resume later.", [
+    Alert.alert("Leave session?", "Progress is saved — you can resume later.", [
       { text: "Keep training", style: "cancel" },
       {
         text: "Save & exit",
@@ -301,37 +338,7 @@ export default function SessionPlayerScreen() {
     ]);
   };
 
-  const goPrevSet = () => {
-    if (phase === "rest") {
-      skipRest();
-      return;
-    }
-    if (setIndex > 0) {
-      setSetIndex((s) => s - 1);
-      return;
-    }
-    if (exerciseIndex > 0) {
-      const prev = session?.exercises[exerciseIndex - 1];
-      const prevScheme = parseRepScheme(prev?.reps);
-      setExerciseIndex((i) => i - 1);
-      setSetIndex(Math.max(prevScheme.length - 1, 0));
-    }
-  };
-
-  const goNextSet = () => {
-    if (phase === "rest") {
-      skipRest();
-      return;
-    }
-    if (!isLastSet) {
-      setSetIndex((s) => s + 1);
-      return;
-    }
-    if (!isLastExercise) {
-      setExerciseIndex((i) => i + 1);
-      setSetIndex(0);
-    }
-  };
+  const restPct = restTotal > 0 ? restLeft / restTotal : 0;
 
   return (
     <View style={styles.root}>
@@ -348,127 +355,170 @@ export default function SessionPlayerScreen() {
       >
         {session && exercise ? (
           <>
-            <View
-              style={[styles.videoLayer, phase === "rest" && styles.videoHidden]}
-              pointerEvents={phase === "rest" ? "none" : "auto"}
-            >
-              <SessionVideo
-                cacheKey={exercise.id}
-                muxPlaybackId={exercise.muxPlaybackId ?? session.muxPlaybackId}
-                videoUrl={exercise.videoUrl ?? session.videoUrl}
-                playing={playing && phase === "work"}
-                playbackRate={speed}
-                loop={false}
-                onEnded={() => setPlaying(false)}
-              />
-            </View>
-            {phase === "work" ? (
-              <LinearGradient
-                colors={["rgba(0,0,0,0.55)", "rgba(0,0,0,0.2)", "rgba(0,0,0,0.85)"]}
-                style={StyleSheet.absoluteFill}
-                pointerEvents="none"
-              />
-            ) : null}
-
-            <View style={[styles.top, { paddingTop: insets.top + 12 }]}>
-              <Pressable onPress={onExit} style={styles.exit} hitSlop={8}>
+            <View style={[styles.top, { paddingTop: insets.top + 10 }]}>
+              <Pressable onPress={onExit} style={styles.iconBtn} hitSlop={8}>
                 <X color={colors.white} size={20} />
               </Pressable>
-              <View>
-                <Text style={styles.time}>{formatClock(elapsed)}</Text>
-                <Text style={styles.meta}>Total Time</Text>
+              <View style={styles.topCenter}>
+                <Text style={styles.sessionTitle} numberOfLines={1}>
+                  {session.title}
+                </Text>
+                <Text style={styles.clock}>{formatClock(elapsed)}</Text>
               </View>
-              <View style={{ alignItems: "center", flex: 1, paddingHorizontal: 4 }}>
-                <Text style={styles.exName} numberOfLines={1}>
-                  {exercise.name}
+              <View style={styles.topRight}>
+                <Text style={styles.stepCount}>
+                  {exerciseIndex + 1}/{session.exercises.length}
                 </Text>
-                <Text style={styles.setLine}>
-                  {phase === "rest" ? (
-                    <Text style={{ color: colors.accent }}>Rest</Text>
-                  ) : (
-                    <Text style={{ color: colors.accent }}>Working Set</Text>
-                  )}
-                  {" | "}
-                  {formatRepsLabel(targetReps, exercise.reps)}
-                </Text>
-              </View>
-              <View style={{ alignItems: "flex-end" }}>
-                <Text style={styles.time}>
-                  {setIndex + 1}/{totalSets}
-                </Text>
-                <Text style={styles.meta}>
-                  {/rounds?/i.test(exercise.reps) ? "Rounds" : "Sets"}
-                </Text>
+                <Text style={styles.stepLabel}>Drill</Text>
               </View>
             </View>
 
-            {phase === "rest" ? (
-              <View style={styles.restOverlay} pointerEvents="box-none">
-                <Text style={styles.restLabel}>REST</Text>
-                <Text style={styles.restClock}>{restLeft}s</Text>
-                <Pressable style={styles.skipRest} onPress={skipRest}>
-                  <Text style={styles.skipRestText}>Skip rest</Text>
-                </Pressable>
-              </View>
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: `${Math.round(progress * 100)}%` }]} />
+            </View>
+
+            {phase === "work" ? (
+              <>
+                <View style={styles.videoStage}>
+                  <SessionVideo
+                    key={exercise.id}
+                    cacheKey={exercise.id}
+                    muxPlaybackId={exercise.muxPlaybackId ?? session.muxPlaybackId}
+                    videoUrl={exercise.videoUrl ?? session.videoUrl}
+                    playing={playing}
+                    playbackRate={speed}
+                    loop
+                    onEnded={() => setPlaying(true)}
+                  />
+                  <Pressable
+                    style={styles.videoTap}
+                    onPress={() => {
+                      setPlaying((p) => !p);
+                      void Haptics.selectionAsync();
+                    }}
+                  >
+                    {!playing ? (
+                      <View style={styles.pauseBadge}>
+                        <Pause color={colors.white} fill={colors.white} size={28} />
+                        <Text style={styles.pauseText}>Paused · tap to play</Text>
+                      </View>
+                    ) : null}
+                  </Pressable>
+                  <LinearGradient
+                    colors={["transparent", "rgba(20,17,17,0.9)"]}
+                    style={styles.stageFade}
+                    pointerEvents="none"
+                  />
+                </View>
+
+                <View style={styles.workHud}>
+                  <Text style={styles.drillName} numberOfLines={2}>
+                    {exercise.name}
+                  </Text>
+                  <View style={styles.setRow}>
+                    {Array.from({ length: totalSets }).map((_, i) => (
+                      <View
+                        key={i}
+                        style={[
+                          styles.setDot,
+                          i < setIndex && styles.setDotDone,
+                          i === setIndex && styles.setDotActive,
+                        ]}
+                      />
+                    ))}
+                  </View>
+                  <Text style={styles.setCaption}>
+                    {isRounds ? "Round" : "Set"} {setIndex + 1} of {totalSets}
+                    {"  ·  "}
+                    <Text style={{ color: colors.accent }}>
+                      {formatRepsLabel(targetReps, exercise.reps)}
+                    </Text>
+                  </Text>
+                </View>
+              </>
             ) : (
-              <View style={styles.mid}>
-                <Pressable onPress={goPrevSet} style={styles.chev}>
-                  <ChevronsLeft color={colors.accent} size={36} />
-                </Pressable>
-                <Pressable onPress={() => setPlaying((p) => !p)} style={styles.tapZone} />
-                <Pressable onPress={goNextSet} style={styles.chev}>
-                  <ChevronsRight color={colors.accent} size={36} />
-                </Pressable>
+              <View style={styles.restCenter}>
+                <Text style={styles.restKicker}>RECOVER</Text>
+                <View style={styles.restRing}>
+                  <View
+                    style={[
+                      styles.restRingTrack,
+                      {
+                        borderColor: `rgba(241,188,3,${0.25 + restPct * 0.55})`,
+                      },
+                    ]}
+                  />
+                  <Text style={styles.restClock}>{restLeft}</Text>
+                  <Text style={styles.restUnit}>sec</Text>
+                </View>
+                <Text style={styles.upNextLabel}>UP NEXT</Text>
+                <Text style={styles.upNextTitle} numberOfLines={2}>
+                  {upNext.title}
+                </Text>
+                <Text style={styles.upNextMeta}>{upNext.meta}</Text>
               </View>
             )}
 
-            <View style={styles.speedWrap}>
-              <Pressable
-                style={styles.speed}
-                onPress={() => setSpeed((s) => nextSpeed(s))}
-              >
-                <Text style={styles.speedText}>{speed.toFixed(2).replace(/\.00$/, ".0")}x Speed</Text>
-              </Pressable>
-            </View>
-
-            <View style={styles.logRow}>
-              <Text style={styles.maxText}>
-                Max Reps Logged:{" "}
-                <Text style={{ color: colors.accent }}>
-                  {maxReps != null ? maxReps : "—"}
-                </Text>
-              </Text>
+            <View style={[styles.dock, { paddingBottom: insets.bottom + 14 }]}>
               {phase === "work" ? (
-                <View style={styles.repsBox}>
-                  <Text style={styles.repsLabel}>Log</Text>
-                  <TextInput
-                    style={styles.repsInput}
-                    value={repsInput}
-                    onChangeText={setRepsInput}
-                    keyboardType="number-pad"
-                    selectTextOnFocus
-                  />
+                <View style={styles.dockTools}>
+                  <Pressable
+                    style={styles.toolChip}
+                    onPress={() => {
+                      setSpeed((s) => nextSpeed(s));
+                      void Haptics.selectionAsync();
+                    }}
+                  >
+                    <Text style={styles.toolChipText}>
+                      {speed.toFixed(2).replace(/\.00$/, ".0")}x
+                    </Text>
+                  </Pressable>
+                  <View style={styles.logChip}>
+                    <Text style={styles.logLabel}>Log reps</Text>
+                    <TextInput
+                      style={styles.logInput}
+                      value={repsInput}
+                      onChangeText={setRepsInput}
+                      keyboardType="number-pad"
+                      selectTextOnFocus
+                    />
+                  </View>
+                  <Text style={styles.prHint}>
+                    PR {maxReps != null ? maxReps : "—"}
+                  </Text>
                 </View>
-              ) : null}
-            </View>
+              ) : (
+                <View style={styles.dockTools}>
+                  <Text style={styles.restHint}>Breathe · shake out · stay ready</Text>
+                </View>
+              )}
 
-            <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.next} numberOfLines={1}>
-                  Next: {nextLabel}
-                </Text>
-                <Text style={styles.nextMeta}>{nextMeta}</Text>
-                <Text style={styles.progressHint}>
-                  Exercise {exerciseIndex + 1}/{session.exercises.length}
-                </Text>
+              <View style={styles.dockActions}>
+                {phase === "rest" ? (
+                  <Pressable style={styles.secondaryBtn} onPress={skipRest}>
+                    <Text style={styles.secondaryBtnText}>Skip rest</Text>
+                  </Pressable>
+                ) : (
+                  <View style={styles.nextPreview}>
+                    <Text style={styles.nextPreviewLabel}>Next</Text>
+                    <Text style={styles.nextPreviewTitle} numberOfLines={1}>
+                      {upNext.title}
+                    </Text>
+                  </View>
+                )}
+                <Pressable
+                  style={[styles.primaryBtn, finishing && { opacity: 0.55 }]}
+                  onPress={onAdvance}
+                  disabled={finishing}
+                >
+                  {phase === "rest" ? (
+                    <Play color={colors.black} fill={colors.black} size={20} />
+                  ) : (
+                    <Check color={colors.black} size={22} strokeWidth={3} />
+                  )}
+                  <Text style={styles.primaryBtnText}>{primaryLabel}</Text>
+                </Pressable>
               </View>
-              <Pressable
-                style={[styles.play, finishing && { opacity: 0.6 }]}
-                onPress={onAdvance}
-                disabled={finishing}
-              >
-                <Play color={colors.white} fill={colors.white} size={22} />
-              </Pressable>
             </View>
           </>
         ) : null}
@@ -479,136 +529,294 @@ export default function SessionPlayerScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.black },
-  videoLayer: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 0,
+  videoStage: {
+    flex: 1,
+    marginHorizontal: spacing.lg,
+    marginTop: 12,
+    borderRadius: radii.xl,
+    overflow: "hidden",
+    backgroundColor: "#000",
   },
-  videoHidden: {
-    opacity: 0,
+  stageFade: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 72,
   },
   top: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     paddingHorizontal: spacing.lg,
-    gap: 8,
-    zIndex: 2,
+    gap: 10,
   },
-  exit: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(0,0,0,0.45)",
+  iconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.08)",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 4,
   },
-  time: { color: colors.white, fontFamily: fonts.alumniBoldItalic, fontSize: 22, lineHeight: 26 },
-  meta: { color: colors.textMuted, fontFamily: fonts.poppinsRegular, fontSize: 11, marginTop: 2 },
-  exName: {
+  topCenter: { flex: 1, alignItems: "center" },
+  sessionTitle: {
+    color: "rgba(255,255,255,0.7)",
+    fontFamily: fonts.poppinsMedium,
+    fontSize: 12,
+  },
+  clock: {
     color: colors.white,
-    fontFamily: fonts.poppinsSemiBold,
-    fontSize: 16,
-    textAlign: "center",
+    fontFamily: fonts.alumniBoldItalic,
+    fontSize: 22,
+    lineHeight: 24,
+    marginTop: 2,
   },
-  setLine: { color: colors.white, fontFamily: fonts.poppinsRegular, fontSize: 12, marginTop: 4 },
-  mid: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.sm,
-    zIndex: 2,
+  topRight: { alignItems: "flex-end", minWidth: 40 },
+  stepCount: {
+    color: colors.white,
+    fontFamily: fonts.alumniBoldItalic,
+    fontSize: 20,
+    lineHeight: 22,
   },
-  restOverlay: {
+  stepLabel: {
+    color: colors.textMuted,
+    fontFamily: fonts.poppinsRegular,
+    fontSize: 10,
+    marginTop: 2,
+  },
+  progressTrack: {
+    height: 3,
+    marginTop: 12,
+    marginHorizontal: spacing.lg,
+    borderRadius: 99,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    backgroundColor: colors.accent,
+    borderRadius: 99,
+  },
+  videoTap: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.bg,
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 1,
   },
-  restLabel: {
-    color: colors.accent,
+  pauseBadge: {
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    borderRadius: 20,
+    backgroundColor: "rgba(0,0,0,0.55)",
+  },
+  pauseText: {
+    color: colors.white,
+    fontFamily: fonts.poppinsMedium,
+    fontSize: 13,
+  },
+  workHud: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: 14,
+    paddingBottom: 8,
+  },
+  drillName: {
+    color: colors.white,
     fontFamily: fonts.alumniBoldItalic,
-    fontSize: 28,
-    letterSpacing: 2,
+    fontSize: 32,
+    lineHeight: 34,
+  },
+  setRow: {
+    flexDirection: "row",
+    gap: 6,
+    marginTop: 14,
+  },
+  setDot: {
+    flex: 1,
+    height: 4,
+    borderRadius: 99,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    maxWidth: 48,
+  },
+  setDotDone: { backgroundColor: colors.accent },
+  setDotActive: { backgroundColor: colors.white },
+  setCaption: {
+    color: "rgba(255,255,255,0.75)",
+    fontFamily: fonts.poppinsRegular,
+    fontSize: 13,
+    marginTop: 10,
+  },
+  restCenter: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.xl,
+  },
+  restKicker: {
+    color: colors.accent,
+    fontFamily: fonts.alumniScSemiBoldItalic,
+    letterSpacing: 3,
+    fontSize: 14,
+    marginBottom: 18,
+  },
+  restRing: {
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 28,
+  },
+  restRingTrack: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 100,
+    borderWidth: 6,
   },
   restClock: {
     color: colors.white,
     fontFamily: fonts.alumniBoldItalic,
-    fontSize: 72,
-    lineHeight: 76,
-    marginTop: 8,
+    fontSize: 88,
+    lineHeight: 90,
   },
-  skipRest: {
-    marginTop: 16,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.3)",
+  restUnit: {
+    color: colors.textMuted,
+    fontFamily: fonts.poppinsMedium,
+    fontSize: 14,
+    marginTop: -4,
   },
-  skipRestText: { color: colors.white, fontFamily: fonts.poppinsMedium, fontSize: 13 },
-  chev: { padding: 8 },
-  tapZone: { flex: 1, height: "100%" },
-  speedWrap: { alignItems: "center", marginBottom: 12, zIndex: 2 },
-  speed: {
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.25)",
-    backgroundColor: "rgba(0,0,0,0.45)",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: radii.pill,
+  upNextLabel: {
+    color: colors.textDim,
+    fontFamily: fonts.poppinsMedium,
+    fontSize: 11,
+    letterSpacing: 1.2,
   },
-  speedText: { color: colors.white, fontFamily: fonts.poppinsRegular, fontSize: 13 },
-  logRow: {
-    backgroundColor: "rgba(0,0,0,0.65)",
-    paddingVertical: 10,
+  upNextTitle: {
+    color: colors.white,
+    fontFamily: fonts.poppinsSemiBold,
+    fontSize: 20,
+    textAlign: "center",
+    marginTop: 6,
+  },
+  upNextMeta: {
+    color: colors.textMuted,
+    fontFamily: fonts.poppinsRegular,
+    fontSize: 13,
+    marginTop: 4,
+  },
+  dock: {
     paddingHorizontal: spacing.lg,
+    gap: 12,
+  },
+  dockTools: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    zIndex: 2,
+    gap: 10,
   },
-  maxText: { color: colors.white, fontFamily: fonts.poppinsRegular, fontSize: 13 },
-  repsBox: { flexDirection: "row", alignItems: "center", gap: 8 },
-  repsLabel: { color: colors.textMuted, fontFamily: fonts.poppinsMedium, fontSize: 12 },
-  repsInput: {
-    minWidth: 48,
+  toolChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radii.pill,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+  },
+  toolChipText: {
+    color: colors.white,
+    fontFamily: fonts.poppinsSemiBold,
+    fontSize: 13,
+  },
+  logChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingLeft: 12,
+    paddingRight: 6,
+    paddingVertical: 4,
+    borderRadius: radii.pill,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+  },
+  logLabel: {
+    color: colors.textMuted,
+    fontFamily: fonts.poppinsMedium,
+    fontSize: 12,
+  },
+  logInput: {
+    minWidth: 40,
     textAlign: "center",
     color: colors.white,
     fontFamily: fonts.poppinsSemiBold,
     fontSize: 16,
     backgroundColor: colors.surfaceElevated,
-    borderRadius: 8,
-    paddingHorizontal: 10,
+    borderRadius: 10,
+    paddingHorizontal: 8,
     paddingVertical: 6,
   },
-  footer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: colors.surface,
-    marginHorizontal: spacing.md,
-    marginTop: 8,
-    borderRadius: radii.xl,
-    padding: spacing.lg,
-    gap: 12,
-    zIndex: 2,
-  },
-  next: { color: colors.white, fontFamily: fonts.poppinsSemiBold, fontSize: 16 },
-  nextMeta: { color: colors.textMuted, fontFamily: fonts.poppinsRegular, marginTop: 2 },
-  progressHint: {
+  prHint: {
+    marginLeft: "auto",
     color: colors.textDim,
     fontFamily: fonts.poppinsRegular,
-    fontSize: 11,
-    marginTop: 4,
+    fontSize: 12,
   },
-  play: {
-    width: 56,
-    height: 56,
+  restHint: {
+    color: colors.textMuted,
+    fontFamily: fonts.poppinsRegular,
+    fontSize: 13,
+  },
+  dockActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  nextPreview: {
+    flex: 1,
+    backgroundColor: colors.surface,
     borderRadius: radii.lg,
-    backgroundColor: colors.accent,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  nextPreviewLabel: {
+    color: colors.textDim,
+    fontFamily: fonts.poppinsMedium,
+    fontSize: 10,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+  },
+  nextPreviewTitle: {
+    color: colors.white,
+    fontFamily: fonts.poppinsSemiBold,
+    fontSize: 14,
+    marginTop: 2,
+  },
+  secondaryBtn: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    paddingVertical: 16,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+  },
+  secondaryBtnText: {
+    color: colors.white,
+    fontFamily: fonts.poppinsSemiBold,
+    fontSize: 15,
+  },
+  primaryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: colors.accent,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    borderRadius: radii.lg,
+    minWidth: 168,
+  },
+  primaryBtnText: {
+    color: colors.black,
+    fontFamily: fonts.poppinsSemiBold,
+    fontSize: 15,
   },
 });
