@@ -2,7 +2,8 @@ import { BackButton } from "@/src/components/ui/BackButton";
 import { Button } from "@/src/components/ui/Button";
 import { EmptyState } from "@/src/components/ui/EmptyState";
 import { QueryGate } from "@/src/components/ui/QueryGate";
-import { enrollProgram, loadSessionProgress } from "@/src/data/progress";
+import { completeSession, enrollProgram, loadSessionProgress, fetchSetHistory } from "@/src/data/progress";
+import { fetchFavoriteProgramIds, toggleFavoriteProgram } from "@/src/data/favorites";
 import { useCatalog } from "@/src/hooks/useCatalog";
 import { useProgress } from "@/src/hooks/useProgress";
 import { useWorkoutSession } from "@/src/hooks/useResource";
@@ -13,7 +14,16 @@ import { colors, fonts, radii, spacing, typography } from "@/src/theme";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { Clock3, Download, Layers, Play } from "lucide-react-native";
+import {
+  Bookmark,
+  CheckCircle2,
+  Clock3,
+  Download,
+  History,
+  Layers,
+  Play,
+  Star,
+} from "lucide-react-native";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import {
   Alert,
@@ -29,18 +39,26 @@ export default function WorkoutPreviewScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: session, loading, error, reload } = useWorkoutSession(id);
   const { programs } = useCatalog();
-  const { enrollments } = useProgress();
-  const { user } = useAuth();
+  const { enrollments, completedSessionIds, reload: reloadProgress } = useProgress();
+  const { user, refreshProfile } = useAuth();
   const [starting, setStarting] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [downloadPct, setDownloadPct] = useState(0);
   const [offlineReady, setOfflineReady] = useState(false);
   const [canResume, setCanResume] = useState(false);
+  const [favorited, setFavorited] = useState(false);
+  const [historyCount, setHistoryCount] = useState(0);
+  const [marking, setMarking] = useState(false);
   const insets = useSafeAreaInsets();
 
   const program = programs.find((p) => p.id === session?.programId);
   const enrolled = !!session && enrollments.some((e) => e.programId === session.programId);
   const canStart = !!session && session.exercises.length > 0;
+  const alreadyDone = !!session && completedSessionIds.includes(session.id);
+
+  const setCount = session
+    ? session.exercises.reduce((n, ex) => n + parseRepScheme(ex.reps).length, 0)
+    : 0;
 
   useEffect(() => {
     if (!session) return;
@@ -57,10 +75,18 @@ export default function WorkoutPreviewScreen() {
       void loadSessionProgress(id).then((p) => {
         if (!cancelled) setCanResume(!!p);
       });
+      void fetchSetHistory(id).then((rows) => {
+        if (!cancelled) setHistoryCount(rows.length);
+      });
+      if (user?.id && session?.programId) {
+        void fetchFavoriteProgramIds(user.id).then((set) => {
+          if (!cancelled) setFavorited(set.has(session.programId));
+        });
+      }
       return () => {
         cancelled = true;
       };
-    }, [id]),
+    }, [id, user?.id, session?.programId]),
   );
 
   const ensureAccess = () => {
@@ -76,6 +102,34 @@ export default function WorkoutPreviewScreen() {
       return false;
     }
     return true;
+  };
+
+  const onMarkOff = async () => {
+    if (!session || marking) return;
+    if (!ensureAccess()) return;
+    setMarking(true);
+    try {
+      if (user) {
+        try {
+          await enrollProgram(session.programId);
+        } catch {
+          /* ok */
+        }
+      }
+      const result = await completeSession({
+        sessionId: session.id,
+        durationSeconds: (session.minutes || 45) * 60,
+        setsLogged: setCount,
+      });
+      await reloadProgress();
+      await refreshProfile();
+      router.replace({
+        pathname: "/workout-complete",
+        params: { id: session.id, xp: String(result.xp || 0) },
+      });
+    } finally {
+      setMarking(false);
+    }
   };
 
   const onStart = async () => {
@@ -124,10 +178,6 @@ export default function WorkoutPreviewScreen() {
       setDownloading(false);
     }
   };
-
-  const setCount = session
-    ? session.exercises.reduce((n, ex) => n + parseRepScheme(ex.reps).length, 0)
-    : 0;
 
   return (
     <View style={styles.root}>
@@ -192,13 +242,87 @@ export default function WorkoutPreviewScreen() {
               <View style={styles.metaRow}>
                 <MetaChip icon={<Clock3 color={colors.black} size={14} />} label={`${session.minutes} min`} />
                 <MetaChip icon={<Layers color={colors.black} size={14} />} label={`${session.exercises.length} drills`} />
-                <MetaChip icon={<Play color={colors.black} size={14} />} label={`${setCount} sets`} />
+                <MetaChip icon={<Play color={colors.black} size={14} />} label={`${setCount} rounds`} />
+              </View>
+
+              <View style={styles.actionGrid}>
+                <ActionBtn
+                  icon={
+                    <Star
+                      color={favorited ? colors.accent : colors.white}
+                      fill={favorited ? colors.accent : "transparent"}
+                      size={18}
+                    />
+                  }
+                  label="Favorite"
+                  onPress={() => {
+                    if (!program) return;
+                    void toggleFavoriteProgram(program.id, user?.id).then((r) =>
+                      setFavorited(r.favorited),
+                    );
+                  }}
+                />
+                <ActionBtn
+                  icon={<Bookmark color={colors.white} size={18} />}
+                  label="Save offline"
+                  onPress={() => void onDownload()}
+                />
+                <ActionBtn
+                  icon={<History color={colors.white} size={18} />}
+                  label={historyCount ? `${historyCount} logs` : "History"}
+                  onPress={() =>
+                    Alert.alert(
+                      "Session history",
+                      historyCount
+                        ? `You've logged ${historyCount} set/round entries on this session.`
+                        : "No rounds logged yet — start the session to build history.",
+                    )
+                  }
+                />
+                <ActionBtn
+                  icon={<CheckCircle2 color={alreadyDone ? colors.accent : colors.white} size={18} />}
+                  label={alreadyDone ? "Done" : "Mark off"}
+                  onPress={() => {
+                    if (alreadyDone) {
+                      Alert.alert("Already complete", "This session is already in your logs.");
+                      return;
+                    }
+                    Alert.alert(
+                      "Mark session complete?",
+                      "Credits XP without playing the full session.",
+                      [
+                        { text: "Cancel", style: "cancel" },
+                        { text: "Mark off", onPress: () => void onMarkOff() },
+                      ],
+                    );
+                  }}
+                />
+              </View>
+
+              <View style={styles.overviewCard}>
+                <Text style={styles.overviewTitle}>Session overview</Text>
+                <View style={styles.overviewStats}>
+                  <View style={styles.ovStat}>
+                    <Text style={styles.ovValue}>{session.exercises.length}</Text>
+                    <Text style={styles.ovLabel}>Drills</Text>
+                  </View>
+                  <View style={styles.ovDiv} />
+                  <View style={styles.ovStat}>
+                    <Text style={styles.ovValue}>{setCount}</Text>
+                    <Text style={styles.ovLabel}>Rounds</Text>
+                  </View>
+                  <View style={styles.ovDiv} />
+                  <View style={styles.ovStat}>
+                    <Text style={styles.ovValue}>{session.minutes}</Text>
+                    <Text style={styles.ovLabel}>Minutes</Text>
+                  </View>
+                </View>
               </View>
 
               <View style={styles.flowHint}>
                 <Text style={styles.flowTitle}>How it works</Text>
                 <Text style={styles.flowBody}>
-                  Watch the drill · hit Complete set · rest timer · next set. Videos loop so you can match the movement.
+                  Watch the drill · log the round · rest timer · next. Videos loop so you can match the movement.
                 </Text>
               </View>
 
@@ -269,6 +393,23 @@ function MetaChip({ icon, label }: { icon: ReactNode; label: string }) {
   );
 }
 
+function ActionBtn({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: ReactNode;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable style={styles.actionBtn} onPress={onPress}>
+      {icon}
+      <Text style={styles.actionLabel}>{label}</Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.black },
   hero: { height: 320, justifyContent: "flex-end" },
@@ -332,6 +473,54 @@ const styles = StyleSheet.create({
     fontFamily: fonts.poppinsSemiBold,
     fontSize: 12,
   },
+  actionGrid: {
+    flexDirection: "row",
+    marginTop: spacing.xl,
+    marginHorizontal: spacing.xl,
+    gap: 8,
+  },
+  actionBtn: {
+    flex: 1,
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    paddingVertical: 12,
+  },
+  actionLabel: {
+    color: colors.textMuted,
+    fontFamily: fonts.poppinsMedium,
+    fontSize: 10,
+    textAlign: "center",
+  },
+  overviewCard: {
+    marginTop: spacing.xl,
+    marginHorizontal: spacing.xl,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
+  },
+  overviewTitle: {
+    color: colors.white,
+    fontFamily: fonts.poppinsSemiBold,
+    fontSize: 14,
+    marginBottom: 12,
+  },
+  overviewStats: { flexDirection: "row", alignItems: "center" },
+  ovStat: { flex: 1, alignItems: "center" },
+  ovValue: {
+    color: colors.white,
+    fontFamily: fonts.alumniBoldItalic,
+    fontSize: 26,
+    lineHeight: 28,
+  },
+  ovLabel: {
+    color: colors.textMuted,
+    fontFamily: fonts.poppinsRegular,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  ovDiv: { width: 1, height: 28, backgroundColor: colors.border },
   flowHint: {
     marginTop: spacing.xl,
     marginHorizontal: spacing.xl,

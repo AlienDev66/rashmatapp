@@ -8,6 +8,7 @@ import {
   saveSessionProgress,
 } from "@/src/data/progress";
 import { useWorkoutSession } from "@/src/hooks/useResource";
+import { tipForDrill } from "@/src/lib/drillTips";
 import {
   estimateSessionXp,
   formatRepsLabel,
@@ -20,11 +21,13 @@ import { colors, fonts, radii, spacing } from "@/src/theme";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
-import { Check, Pause, Play, X } from "lucide-react-native";
+import { Check, Lightbulb, List, Pause, Play, X } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
+  Modal,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -59,6 +62,9 @@ export default function SessionPlayerScreen() {
   const [setsLogged, setSetsLogged] = useState(0);
   const [finishing, setFinishing] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [showList, setShowList] = useState(false);
+  const [showTip, setShowTip] = useState(false);
+  const [note, setNote] = useState("");
   const startedAt = useRef(Date.now());
   const baseElapsed = useRef(0);
   /** Applied when rest ends / is skipped — keeps "Up next" accurate during rest. */
@@ -415,6 +421,28 @@ export default function SessionPlayerScreen() {
                   <Text style={styles.drillName} numberOfLines={2}>
                     {exercise.name}
                   </Text>
+                  <View style={styles.cueRow}>
+                    <Pressable
+                      style={styles.cueBtn}
+                      onPress={() => {
+                        setShowTip(true);
+                        void Haptics.selectionAsync();
+                      }}
+                    >
+                      <Lightbulb color={colors.accent} size={16} />
+                      <Text style={styles.cueBtnText}>Tip</Text>
+                    </Pressable>
+                    <Pressable
+                      style={styles.cueBtn}
+                      onPress={() => {
+                        setShowList(true);
+                        void Haptics.selectionAsync();
+                      }}
+                    >
+                      <List color={colors.accent} size={16} />
+                      <Text style={styles.cueBtnText}>List</Text>
+                    </Pressable>
+                  </View>
                   <View style={styles.setRow}>
                     {Array.from({ length: totalSets }).map((_, i) => (
                       <View
@@ -474,7 +502,7 @@ export default function SessionPlayerScreen() {
                     </Text>
                   </Pressable>
                   <View style={styles.logChip}>
-                    <Text style={styles.logLabel}>Log reps</Text>
+                    <Text style={styles.logLabel}>{isRounds ? "Rounds" : "Reps"}</Text>
                     <TextInput
                       style={styles.logInput}
                       value={repsInput}
@@ -483,8 +511,15 @@ export default function SessionPlayerScreen() {
                       selectTextOnFocus
                     />
                   </View>
+                  <TextInput
+                    style={styles.noteInput}
+                    value={note}
+                    onChangeText={setNote}
+                    placeholder="Note"
+                    placeholderTextColor={colors.textDim}
+                  />
                   <Text style={styles.prHint}>
-                    PR {maxReps != null ? maxReps : "—"}
+                    Best {maxReps != null ? maxReps : "—"}
                   </Text>
                 </View>
               ) : (
@@ -520,6 +555,48 @@ export default function SessionPlayerScreen() {
                 </Pressable>
               </View>
             </View>
+
+            <Modal visible={showList} transparent animationType="slide" onRequestClose={() => setShowList(false)}>
+              <Pressable style={styles.modalBackdrop} onPress={() => setShowList(false)} />
+              <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
+                <Text style={styles.sheetTitle}>Session drills</Text>
+                <ScrollView>
+                  {session.exercises.map((ex, i) => (
+                    <Pressable
+                      key={ex.id}
+                      style={[styles.sheetRow, i === exerciseIndex && styles.sheetRowOn]}
+                      onPress={() => {
+                        setExerciseIndex(i);
+                        setSetIndex(0);
+                        setPhase("work");
+                        setShowList(false);
+                        void persist("in_progress");
+                      }}
+                    >
+                      <Text style={styles.sheetNum}>{i + 1}</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.sheetName}>{ex.name}</Text>
+                        <Text style={styles.sheetMeta}>{ex.reps}</Text>
+                      </View>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+            </Modal>
+
+            <Modal visible={showTip} transparent animationType="fade" onRequestClose={() => setShowTip(false)}>
+              <View style={[styles.modalBackdrop, { justifyContent: "center" }]}>
+                <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowTip(false)} />
+                <View style={styles.tipCard}>
+                  <Text style={styles.tipKicker}>FORM CUE</Text>
+                  <Text style={styles.tipTitle}>{exercise.name}</Text>
+                  <Text style={styles.tipBody}>{tipForDrill(exercise.name, exercise.reps)}</Text>
+                  <Pressable style={styles.tipClose} onPress={() => setShowTip(false)}>
+                    <Text style={styles.tipCloseText}>Got it</Text>
+                  </Pressable>
+                </View>
+              </View>
+            </Modal>
           </>
         ) : null}
       </QueryGate>
@@ -818,5 +895,104 @@ const styles = StyleSheet.create({
     color: colors.black,
     fontFamily: fonts.poppinsSemiBold,
     fontSize: 15,
+  },
+  cueRow: { flexDirection: "row", gap: 8, marginTop: 10 },
+  cueBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radii.pill,
+  },
+  cueBtnText: {
+    color: colors.white,
+    fontFamily: fonts.poppinsMedium,
+    fontSize: 12,
+  },
+  noteInput: {
+    flex: 1,
+    minWidth: 64,
+    color: colors.white,
+    fontFamily: fonts.poppinsRegular,
+    fontSize: 13,
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    justifyContent: "flex-end",
+  },
+  sheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: "70%",
+    paddingHorizontal: spacing.lg,
+    paddingTop: 16,
+  },
+  sheetTitle: {
+    color: colors.white,
+    fontFamily: fonts.poppinsBold,
+    fontSize: 16,
+    marginBottom: 12,
+  },
+  sheetRow: {
+    flexDirection: "row",
+    gap: 12,
+    alignItems: "center",
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  sheetRowOn: { backgroundColor: colors.surfaceElevated, borderRadius: 10, paddingHorizontal: 8 },
+  sheetNum: {
+    color: colors.accent,
+    fontFamily: fonts.alumniBoldItalic,
+    fontSize: 20,
+    width: 24,
+  },
+  sheetName: { color: colors.white, fontFamily: fonts.poppinsSemiBold, fontSize: 14 },
+  sheetMeta: { color: colors.textMuted, fontFamily: fonts.poppinsRegular, fontSize: 12, marginTop: 2 },
+  tipCard: {
+    marginHorizontal: 24,
+    backgroundColor: colors.surface,
+    borderRadius: radii.xl,
+    padding: spacing.xl,
+    zIndex: 2,
+  },
+  tipKicker: {
+    color: colors.accent,
+    fontFamily: fonts.poppinsSemiBold,
+    fontSize: 11,
+    letterSpacing: 1,
+  },
+  tipTitle: {
+    color: colors.white,
+    fontFamily: fonts.poppinsSemiBold,
+    fontSize: 18,
+    marginTop: 8,
+  },
+  tipBody: {
+    color: colors.textMuted,
+    fontFamily: fonts.poppinsRegular,
+    fontSize: 14,
+    lineHeight: 21,
+    marginTop: 10,
+  },
+  tipClose: {
+    marginTop: 18,
+    backgroundColor: colors.accent,
+    borderRadius: radii.lg,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  tipCloseText: {
+    color: colors.black,
+    fontFamily: fonts.poppinsSemiBold,
   },
 });
