@@ -18,7 +18,7 @@ bun install
 bun run ios   # or android / web / start
 ```
 
-Apply SQL migrations under `supabase/migrations/` in order (through `20260325000000_rashmat_ma_seed.sql`).
+Apply SQL migrations under `supabase/migrations/` in order (through `20260328000000_showcase_program_seed.sql` for the full Guard Retention showcase).
 
 Brand: **RASHMAT** · [rashmat.app](https://rashmat.app) · [@rashmatapp](https://www.instagram.com/rashmatapp/)
 

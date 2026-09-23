@@ -9,7 +9,10 @@
     "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.rashmat.app"
+      "bundleIdentifier": "com.rashmat.app",
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": ["instagram", "instagram-stories"]
+      }
     },
     "android": {
       "adaptiveIcon": {
