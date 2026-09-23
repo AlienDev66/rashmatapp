@@ -2,7 +2,7 @@ import { BrandMark } from "@/src/components/ui/BrandMark";
 import type { Enrollment } from "@/src/data/progress";
 import type { Program } from "@/src/types";
 import { colors, fonts, radii, spacing } from "@/src/theme";
-import { Check, ChevronRight, LayoutGrid, Trophy, X } from "lucide-react-native";
+import { Check, ChevronRight, BookOpen, ClipboardList, LayoutGrid, Trophy, X } from "lucide-react-native";
 import { useEffect, useRef } from "react";
 import {
   Animated,
@@ -27,6 +27,9 @@ type Props = {
   onOpenProgress: (programId: string) => void;
   onOpenOverview: (programId: string) => void;
   onOpenStudio?: () => void;
+  onOpenLibrary?: () => void;
+  onOpenLogs?: () => void;
+  onOpenAchievements?: () => void;
 };
 
 export function ProgramDrawer({
@@ -40,6 +43,9 @@ export function ProgramDrawer({
   onOpenProgress,
   onOpenOverview,
   onOpenStudio,
+  onOpenLibrary,
+  onOpenLogs,
+  onOpenAchievements,
 }: Props) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -135,6 +141,42 @@ export function ProgramDrawer({
                     onClose();
                   }}
                 />
+              </>
+            ) : null}
+
+            {onOpenLibrary || onOpenLogs || onOpenAchievements ? (
+              <>
+                <Text style={[styles.kicker, { marginTop: 16 }]}>LEARN</Text>
+                {onOpenAchievements ? (
+                  <DrawerLink
+                    icon={<Trophy color={colors.accent} size={18} />}
+                    label="Achievements"
+                    onPress={() => {
+                      onOpenAchievements();
+                      onClose();
+                    }}
+                  />
+                ) : null}
+                {onOpenLibrary ? (
+                  <DrawerLink
+                    icon={<BookOpen color={colors.accent} size={18} />}
+                    label="Rules library"
+                    onPress={() => {
+                      onOpenLibrary();
+                      onClose();
+                    }}
+                  />
+                ) : null}
+                {onOpenLogs ? (
+                  <DrawerLink
+                    icon={<ClipboardList color={colors.accent} size={18} />}
+                    label="Workout logs"
+                    onPress={() => {
+                      onOpenLogs();
+                      onClose();
+                    }}
+                  />
+                ) : null}
               </>
             ) : null}
 
