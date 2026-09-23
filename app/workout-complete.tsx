@@ -1,27 +1,101 @@
+import { WorkoutStoryCard } from "@/src/components/session/WorkoutStoryCard";
 import { Button } from "@/src/components/ui/Button";
 import { QueryGate } from "@/src/components/ui/QueryGate";
 import { fetchSetHistory } from "@/src/data/progress";
 import { useWorkoutSession } from "@/src/hooks/useResource";
-import { colors, fonts, spacing } from "@/src/theme";
+import { shareWorkoutStory } from "@/src/lib/shareStory";
+import { colors, fonts, radii, spacing } from "@/src/theme";
+import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Share2 } from "lucide-react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Animated,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+function formatStoryDate(d = new Date()) {
+  const months = [
+    "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+    "JUL", "AUG", "SEP", "OCT", "NOV", "DEC",
+  ];
+  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
 
 export default function WorkoutCompleteScreen() {
   const { id, xp } = useLocalSearchParams<{ id?: string; xp?: string }>();
   const { data: session, loading, error, reload } = useWorkoutSession(id);
   const insets = useSafeAreaInsets();
+  const { width: screenW } = useWindowDimensions();
   const [setsDone, setSetsDone] = useState(0);
+  const [sharing, setSharing] = useState(false);
   const xpShown = Number(xp) || 0;
+  const xpAnim = useRef(new Animated.Value(0)).current;
+  const [displayXp, setDisplayXp] = useState(0);
+  const storyRef = useRef<View>(null);
+  const dateLabel = useMemo(() => formatStoryDate(), []);
+
+  const storyWidth = Math.min(280, screenW - 72);
+
+  useEffect(() => {
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  }, []);
 
   useEffect(() => {
     if (!session) return;
     void fetchSetHistory(session.id).then((rows) => setSetsDone(rows.length));
   }, [session]);
 
+  useEffect(() => {
+    if (!xpShown) return;
+    xpAnim.setValue(0);
+    const idAnim = xpAnim.addListener(({ value }) => {
+      setDisplayXp(Math.round(value));
+    });
+    Animated.timing(xpAnim, {
+      toValue: xpShown,
+      duration: 1100,
+      useNativeDriver: false,
+    }).start();
+    return () => {
+      xpAnim.removeListener(idAnim);
+    };
+  }, [xpShown, xpAnim]);
+
+  const setsLabel = setsDone || session?.exerciseCount || session?.exercises.length || 0;
+
+  const onShareStory = async () => {
+    if (!session || sharing) return;
+    setSharing(true);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      await new Promise((r) => setTimeout(r, 120));
+      await shareWorkoutStory({
+        viewRef: storyRef,
+        fileName: `rashmat-${session.id}`,
+      });
+    } catch (e) {
+      Alert.alert(
+        "Couldn’t share story",
+        e instanceof Error ? e.message : "Install Instagram or try again.",
+      );
+    } finally {
+      setSharing(false);
+    }
+  };
+
   return (
-    <View style={[styles.root, { paddingTop: insets.top + 40, paddingBottom: insets.bottom + 20 }]}>
+    <View style={styles.root}>
       <QueryGate
         loading={loading}
         error={error}
@@ -35,43 +109,90 @@ export default function WorkoutCompleteScreen() {
       >
         {session ? (
           <>
-            <Text style={styles.kicker}>SESSION COMPLETE</Text>
-            <Text style={styles.title}>Great work</Text>
-            <Text style={styles.sub}>{session.title}</Text>
-
-            <View style={styles.stats}>
-              <Stat value={`+${xpShown}`} label="XP" />
-              <Stat value={`${session.minutes}`} label="MIN" />
-              <Stat
-                value={`${setsDone || session.exerciseCount || session.exercises.length}`}
-                label="SETS"
-              />
-            </View>
-
-            {setsDone > 0 ? (
-              <Text style={styles.history}>
-                Logged {setsDone} set{setsDone === 1 ? "" : "s"} this session.
-              </Text>
-            ) : null}
-
-            <Button
-              label="Back to home  →"
-              variant="accent"
-              onPress={() => router.replace("/(tabs)")}
-              style={{ marginTop: 32 }}
+            <Image
+              source={{ uri: session.coverUrl }}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+              blurRadius={18}
             />
+            <LinearGradient
+              colors={["rgba(20,17,17,0.55)", "rgba(20,17,17,0.92)", "#141111"]}
+              locations={[0, 0.4, 0.82]}
+              style={StyleSheet.absoluteFill}
+            />
+
+            <ScrollView
+              contentContainerStyle={[
+                styles.content,
+                { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 28 },
+              ]}
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.header}>
+                <Text style={styles.kicker}>SESSION COMPLETE</Text>
+                <Text style={styles.title}>You showed up.</Text>
+                <Text style={styles.sub} numberOfLines={2}>
+                  {session.title}
+                </Text>
+              </View>
+
+              {/* Phone-frame preview */}
+              <View style={styles.phone}>
+                <View style={styles.phoneNotch} />
+                <WorkoutStoryCard
+                  ref={storyRef}
+                  width={storyWidth}
+                  stats={{
+                    title: session.title,
+                    coverUrl: session.coverUrl,
+                    xp: displayXp || xpShown,
+                    minutes: session.minutes,
+                    sets: setsLabel,
+                    drills: session.exercises.length,
+                    dateLabel,
+                  }}
+                />
+              </View>
+
+              <View style={styles.actions}>
+                <Pressable
+                  style={[styles.shareBtn, sharing && { opacity: 0.72 }]}
+                  onPress={() => void onShareStory()}
+                  disabled={sharing}
+                >
+                  {sharing ? (
+                    <ActivityIndicator color={colors.black} />
+                  ) : (
+                    <Share2 color={colors.black} size={20} />
+                  )}
+                  <Text style={styles.shareBtnText}>
+                    {sharing ? "Preparing story…" : "Add to Instagram Story"}
+                  </Text>
+                </Pressable>
+
+                <Button
+                  label="Back to home  →"
+                  variant="surface"
+                  onPress={() => router.replace("/(tabs)")}
+                />
+                {session.programId ? (
+                  <Pressable
+                    onPress={() =>
+                      router.replace({
+                        pathname: "/program/[id]",
+                        params: { id: session.programId },
+                      })
+                    }
+                    style={styles.linkBtn}
+                  >
+                    <Text style={styles.linkBtnText}>View program</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            </ScrollView>
           </>
         ) : null}
       </QueryGate>
-    </View>
-  );
-}
-
-function Stat({ value, label }: { value: string; label: string }) {
-  return (
-    <View style={styles.stat}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
 }
@@ -80,56 +201,81 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.black,
+  },
+  content: {
     paddingHorizontal: spacing.xl,
-    justifyContent: "center",
+    alignItems: "center",
+  },
+  header: {
+    alignSelf: "stretch",
+    marginBottom: 22,
   },
   kicker: {
     color: colors.accent,
-    fontFamily: fonts.alumniBoldItalic,
-    fontSize: 14,
-    letterSpacing: 1,
+    fontFamily: fonts.alumniScSemiBoldItalic,
+    fontSize: 13,
+    letterSpacing: 2.2,
   },
   title: {
     color: colors.white,
     fontFamily: fonts.alumniBoldItalic,
-    fontSize: 42,
-    lineHeight: 44,
+    fontSize: 40,
+    lineHeight: 42,
     marginTop: 8,
   },
   sub: {
-    color: colors.textMuted,
-    fontFamily: fonts.poppinsRegular,
-    fontSize: 15,
+    color: "rgba(255,255,255,0.78)",
+    fontFamily: fonts.poppinsMedium,
+    fontSize: 14,
     marginTop: 8,
   },
-  stats: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 36,
-  },
-  stat: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    paddingVertical: 18,
+  phone: {
+    borderRadius: 28,
+    padding: 8,
+    paddingTop: 14,
+    backgroundColor: "#0A0909",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.55,
+    shadowRadius: 28,
+    shadowOffset: { width: 0, height: 16 },
+    elevation: 16,
   },
-  statValue: {
-    color: colors.white,
-    fontFamily: fonts.alumniBoldItalic,
-    fontSize: 28,
+  phoneNotch: {
+    width: 72,
+    height: 5,
+    borderRadius: 99,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    marginBottom: 10,
   },
-  statLabel: {
+  actions: {
+    width: "100%",
+    marginTop: 26,
+    gap: 10,
+  },
+  shareBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    backgroundColor: colors.accent,
+    paddingVertical: 17,
+    borderRadius: radii.lg,
+  },
+  shareBtnText: {
+    color: colors.black,
+    fontFamily: fonts.poppinsSemiBold,
+    fontSize: 15,
+  },
+  linkBtn: {
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  linkBtnText: {
     color: colors.textMuted,
     fontFamily: fonts.poppinsMedium,
-    fontSize: 11,
-    marginTop: 4,
-  },
-  history: {
-    color: colors.textMuted,
-    fontFamily: fonts.poppinsRegular,
-    fontSize: 13,
-    marginTop: 18,
-    textAlign: "center",
+    fontSize: 14,
   },
 });

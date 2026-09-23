@@ -132,7 +132,10 @@ export default function HomeScreen() {
   return (
     <Screen padded={false}>
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          (!enrolled || !activeProgram) && styles.contentEmpty,
+        ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -146,8 +149,8 @@ export default function HomeScreen() {
           error={error}
           empty={!enrolled || !activeProgram}
           emptyTone="training"
-          emptyTitle="No active program"
-          emptyMessage="Unlock a creator camp to track your week and next session here."
+          emptyTitle="Pick your first camp"
+          emptyMessage="Browse creator programs, unlock one, and your week + next session show up here."
           emptyActionLabel="Browse programs  →"
           emptyOnAction={() => router.push("/(tabs)/programs")}
           emptySecondaryLabel="Meet creators"
@@ -257,6 +260,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingBottom: 28,
     gap: spacing.xl,
+  },
+  contentEmpty: {
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingBottom: 48,
   },
   hubHeader: {
     flexDirection: "row",
