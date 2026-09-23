@@ -1,5 +1,5 @@
 /**
- * Resolve a playable URL for workout video.
+ * Resolve a playable URL for session video.
  * Prefer Mux playback ID → HLS; fall back to direct video_url / sample env.
  */
 export function muxPlaybackUrl(playbackId: string) {

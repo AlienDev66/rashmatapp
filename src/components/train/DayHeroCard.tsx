@@ -38,7 +38,7 @@ export function DayHeroCard({ day, onStart, onPreview }: Props) {
         <Text style={styles.title}>{s.title}</Text>
         <Text style={styles.tags}>{tags}</Text>
         <View style={styles.stats}>
-          <Stat value={String(s.exerciseCount || s.exercises.length)} label="Exercises" />
+          <Stat value={String(s.exerciseCount || s.exercises.length)} label="Drills" />
           <View style={styles.statDiv} />
           <Stat value={String(s.sets)} label="Sets" />
           <View style={styles.statDiv} />
@@ -49,7 +49,7 @@ export function DayHeroCard({ day, onStart, onPreview }: Props) {
             <Button label="Preview" variant="ghost" onPress={onPreview} style={styles.btn} />
           ) : null}
           {onStart ? (
-            <Button label="Start  →" variant="accent" onPress={onStart} style={styles.btn} />
+            <Button label="Start session  →" variant="accent" onPress={onStart} style={styles.btn} />
           ) : null}
         </View>
       </View>

@@ -139,7 +139,7 @@ export const ASSESSMENT_STEPS: AssessmentStep[] = [
     options: [
       { id: "academy", label: "Academy / dojo", icon: "🥋" },
       { id: "home", label: "At home", icon: "🏠" },
-      { id: "gym", label: "Gym", icon: "🏋️" },
+      { id: "gym", label: "Academy / gym", icon: "🥋" },
       { id: "outdoors", label: "Outdoors", icon: "🌳" },
     ],
   },
