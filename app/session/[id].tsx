@@ -81,7 +81,7 @@ export default function SessionPlayerScreen() {
       return `Set ${setIndex + 2} · ${formatRepsLabel(scheme[setIndex + 1] ?? targetReps, exercise?.reps)}`;
     }
     if (nextExercise) return nextExercise.name;
-    return "Finish workout";
+    return "Finish session";
   }, [
     phase,
     isLastSet,
@@ -283,7 +283,7 @@ export default function SessionPlayerScreen() {
   };
 
   const onExit = () => {
-    Alert.alert("Leave workout?", "Your progress will be saved so you can resume later.", [
+    Alert.alert("Leave session?", "Your progress will be saved so you can resume later.", [
       { text: "Keep training", style: "cancel" },
       {
         text: "Save & exit",

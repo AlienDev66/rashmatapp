@@ -232,7 +232,7 @@ export default function ProgramDetailScreen() {
                   </View>
                   <View style={styles.hl}>
                     <Clock color={colors.white} size={16} />
-                    <Text style={styles.hlText}>{program.minutes} Min Workout</Text>
+                    <Text style={styles.hlText}>{program.minutes} Min Session</Text>
                   </View>
                 </View>
                 <Text style={styles.section}>PROGRAM OVERVIEW</Text>

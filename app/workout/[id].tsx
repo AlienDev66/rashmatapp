@@ -122,7 +122,7 @@ export default function WorkoutPreviewScreen() {
         error={error}
         empty={!session}
         emptyTone="training"
-        emptyTitle="Workout not found"
+        emptyTitle="Session not found"
         emptyMessage="This session isn’t available. Pick another day from your program."
         emptyActionLabel="Back"
         emptyOnAction={() => router.back()}
@@ -215,7 +215,7 @@ export default function WorkoutPreviewScreen() {
                 </Pressable>
               ) : null}
               <Button
-                label={canStart ? "Start Workout  →" : "Drills unavailable"}
+                label={canStart ? "Start session  →" : "Drills unavailable"}
                 variant="accent"
                 loading={starting}
                 disabled={!canStart || starting}
