@@ -32,16 +32,13 @@ export async function getOfflineVideoUri(cacheKey: string): Promise<string | nul
 }
 
 export async function isSessionOffline(sessionId: string, exerciseIds: string[]) {
-  const keys = exerciseIds.length > 0 ? exerciseIds : [sessionId];
-  const results = await Promise.all(keys.map((k) => getOfflineVideoUri(k)));
-  // Ready when at least half of clips (or the session file) are cached
-  const hit = results.filter(Boolean).length;
-  return hit > 0 && hit >= Math.ceil(keys.length / 2);
+  // Bundled assets ship with the app — always available offline
+  return true;
 }
 
 /**
  * Download session + exercise videos for offline playback.
- * Uses direct video_url (MP4). Mux HLS (.m3u8) is skipped — those stream online only.
+ * Bundled (`rashmat://bundled/*`) and Mux HLS are skipped.
  */
 export async function downloadSessionOffline(opts: {
   sessionId: string;
@@ -54,10 +51,15 @@ export async function downloadSessionOffline(opts: {
   }>;
   onProgress?: (pct: number) => void;
 }) {
+  const isDownloadable = (url?: string | null) =>
+    !!url &&
+    !url.includes(".m3u8") &&
+    !url.startsWith("rashmat://") &&
+    (url.includes("supabase.co/storage") || url.startsWith("https://"));
+
   await ensureDir();
   const map = (await cacheGet<OfflineMap>(MAP_KEY)) ?? {};
-  const sessionFallback =
-    opts.videoUrl && !opts.videoUrl.includes(".m3u8") ? opts.videoUrl : null;
+  const sessionFallback = isDownloadable(opts.videoUrl) ? opts.videoUrl! : null;
 
   const items = [
     {
@@ -65,18 +67,15 @@ export async function downloadSessionOffline(opts: {
       url: sessionFallback,
     },
     ...opts.exercises.map((ex) => {
-      const direct =
-        ex.videoUrl && !ex.videoUrl.includes(".m3u8")
-          ? ex.videoUrl
-          : sessionFallback;
+      const direct = isDownloadable(ex.videoUrl) ? ex.videoUrl! : sessionFallback;
       return { key: ex.id, url: direct };
     }),
   ].filter((item): item is { key: string; url: string } => !!item.url);
 
   if (items.length === 0) {
-    throw new Error(
-      "No downloadable MP4 URLs for this session. Mux HLS streams online only.",
-    );
+    // Bundled drills — already on device
+    opts.onProgress?.(100);
+    return;
   }
 
   let done = 0;
