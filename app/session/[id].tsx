@@ -348,20 +348,27 @@ export default function SessionPlayerScreen() {
       >
         {session && exercise ? (
           <>
-            <SessionVideo
-              cacheKey={exercise.id}
-              muxPlaybackId={exercise.muxPlaybackId ?? session.muxPlaybackId}
-              videoUrl={exercise.videoUrl ?? session.videoUrl}
-              playing={playing && phase === "work"}
-              playbackRate={speed}
-              loop={false}
-              onEnded={() => setPlaying(false)}
-            />
-            <LinearGradient
-              colors={["rgba(0,0,0,0.55)", "rgba(0,0,0,0.2)", "rgba(0,0,0,0.85)"]}
-              style={StyleSheet.absoluteFill}
-              pointerEvents="none"
-            />
+            <View
+              style={[styles.videoLayer, phase === "rest" && styles.videoHidden]}
+              pointerEvents={phase === "rest" ? "none" : "auto"}
+            >
+              <SessionVideo
+                cacheKey={exercise.id}
+                muxPlaybackId={exercise.muxPlaybackId ?? session.muxPlaybackId}
+                videoUrl={exercise.videoUrl ?? session.videoUrl}
+                playing={playing && phase === "work"}
+                playbackRate={speed}
+                loop={false}
+                onEnded={() => setPlaying(false)}
+              />
+            </View>
+            {phase === "work" ? (
+              <LinearGradient
+                colors={["rgba(0,0,0,0.55)", "rgba(0,0,0,0.2)", "rgba(0,0,0,0.85)"]}
+                style={StyleSheet.absoluteFill}
+                pointerEvents="none"
+              />
+            ) : null}
 
             <View style={[styles.top, { paddingTop: insets.top + 12 }]}>
               <Pressable onPress={onExit} style={styles.exit} hitSlop={8}>
@@ -396,7 +403,7 @@ export default function SessionPlayerScreen() {
             </View>
 
             {phase === "rest" ? (
-              <View style={styles.restOverlay}>
+              <View style={styles.restOverlay} pointerEvents="box-none">
                 <Text style={styles.restLabel}>REST</Text>
                 <Text style={styles.restClock}>{restLeft}s</Text>
                 <Pressable style={styles.skipRest} onPress={skipRest}>
@@ -472,6 +479,13 @@ export default function SessionPlayerScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.black },
+  videoLayer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 0,
+  },
+  videoHidden: {
+    opacity: 0,
+  },
   top: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -506,10 +520,11 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   restOverlay: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.bg,
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 2,
+    zIndex: 1,
   },
   restLabel: {
     color: colors.accent,
