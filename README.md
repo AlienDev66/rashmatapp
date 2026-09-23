@@ -8,7 +8,7 @@ Sibling package: [`../web`](../web) (site + Creator Studio / platform).
 
 - **Expo SDK 57** + **Expo Router**
 - **Supabase** (Auth + Postgres + RLS) + **Mux** (session HLS)
-- Creator **Studio** — migrating toward `../web`; app still has `/studio` + `/studio/cms` for MVP
+- Creator **Studio** — primary CMS lives in [`../web`](../web) at `/studio`; app still has `/studio` for on-device editing
 
 ## Run
 
