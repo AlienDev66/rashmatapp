@@ -14,9 +14,9 @@ const img = {
 };
 
 const sampleVideo = {
-  a: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-  b: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-  c: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
+  a: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+  b: "https://media.w3.org/2010/05/sintel/trailer_hd.mp4",
+  c: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4",
 };
 
 export const currentUser: UserProfile = {
@@ -45,7 +45,7 @@ export const creators: Creator[] = [
       tiktok: brand.social.tiktok,
       x: brand.social.x,
     },
-    programIds: ["guard", "nogi-pressure"],
+    programIds: ["retention-system", "guard", "nogi-pressure"],
   },
   {
     id: "mica",
@@ -79,6 +79,19 @@ export const creators: Creator[] = [
 ];
 
 export const programs: Program[] = [
+  {
+    id: "retention-system",
+    title: "GUARD RETENTION SYSTEM",
+    description:
+      "A complete 4-week camp: frames, hip mobility, recovery pathways, and live rounds. Every drill has video.",
+    coverUrl: img.mat1,
+    weeks: 4,
+    daysPerWeek: 3,
+    minutes: 50,
+    level: "Intermediate",
+    tags: ["BJJ", "Guard", "Retention", "Gi"],
+    creatorId: "domingos",
+  },
   {
     id: "blue-belt",
     title: "4 WEEKS TO BLUE BELT",
@@ -159,6 +172,45 @@ function drill(
 }
 
 export const sessions: WorkoutSession[] = [
+  // —— Showcase: Guard Retention System (day 1)
+  {
+    id: "rs-w1d1",
+    title: "FRAMES UNDER PRESSURE",
+    description: "Build elbow-knee frames and create space when someone is smashing your guard.",
+    coverUrl: img.mat1,
+    tags: ["Frames", "Fundamentals"],
+    sets: 14,
+    exerciseCount: 4,
+    programId: "retention-system",
+    day: 1,
+    minutes: 48,
+    videoUrl: sampleVideo.a,
+    exercises: [
+      drill("rs-w1d1-e1", "Elbow-knee frame drill", img.mat1, "Reps: 8 8 8", 45, sampleVideo.a),
+      drill("rs-w1d1-e2", "Create space from smash", img.mat2, "Reps: 8 8 8", 45, sampleVideo.b),
+      drill("rs-w1d1-e3", "Hip heist to knees", img.mat3, "Reps: 6 6 6", 50, sampleVideo.c),
+      drill("rs-w1d1-e4", "Positional — retain vs smash", img.roll, "Rounds: 4 × 2 min", 60, sampleVideo.a),
+    ],
+  },
+  {
+    id: "rs-w1d2",
+    title: "HIP ESCAPE LADDER",
+    description: "Shrimp patterns that recover closed, half, and open guard under controlled pressure.",
+    coverUrl: img.mat2,
+    tags: ["Hips", "Escapes"],
+    sets: 13,
+    exerciseCount: 4,
+    programId: "retention-system",
+    day: 3,
+    minutes: 50,
+    videoUrl: sampleVideo.b,
+    exercises: [
+      drill("rs-w1d2-e1", "Basic shrimp ladder", img.gi, "Reps: 10 10 10", 40, sampleVideo.b),
+      drill("rs-w1d2-e2", "Shrimp to closed guard", img.mat1, "Reps: 8 8 8", 45, sampleVideo.c),
+      drill("rs-w1d2-e3", "Technical stand-up from side", img.woman, "Reps: 6 6 6", 50, sampleVideo.a),
+      drill("rs-w1d2-e4", "Live — start in side control", img.roll, "Rounds: 4 × 2 min", 60, sampleVideo.b),
+    ],
+  },
   // —— Blue belt week 1
   {
     id: "bb-d1",

@@ -33,6 +33,15 @@ const TONE_ICON: Record<EmptyTone, LucideIcon> = {
   missing: UserX,
 };
 
+const TONE_KICKER: Partial<Record<EmptyTone, string>> = {
+  training: "YOUR WEEK",
+  programs: "CATALOG",
+  creators: "COACHES",
+  search: "SEARCH",
+  studio: "STUDIO",
+  notifications: "INBOX",
+};
+
 type Props = {
   title: string;
   message?: string;
@@ -56,28 +65,51 @@ export function EmptyState({
   onSecondary,
 }: Props) {
   const Icon = TONE_ICON[tone];
+  const kicker = TONE_KICKER[tone];
+  const isTraining = tone === "training" && !compact;
 
   return (
-    <View style={[styles.wrap, compact && styles.wrapCompact]}>
-      <View style={[styles.visual, compact && styles.visualCompact]}>
-        <View style={styles.slash} />
-        <View style={[styles.slash, styles.slashDim]} />
-        <View style={styles.mark}>
-          <BrandMark size={compact ? 40 : 56} variant="yellow" />
+    <View style={[styles.wrap, compact && styles.wrapCompact, isTraining && styles.wrapTraining]}>
+      {isTraining ? (
+        <View style={styles.heroMark}>
+          <View style={styles.heroGlow} />
+          <BrandMark size={72} variant="yellow" />
         </View>
-        <View style={[styles.iconBadge, compact && styles.iconBadgeCompact]}>
-          <Icon color={colors.accent} size={compact ? 18 : 22} strokeWidth={2.2} />
+      ) : (
+        <View style={[styles.visual, compact && styles.visualCompact]}>
+          <View style={styles.slash} />
+          <View style={[styles.slash, styles.slashDim]} />
+          <View style={styles.mark}>
+            <BrandMark size={compact ? 40 : 52} variant="yellow" />
+          </View>
+          <View style={[styles.iconBadge, compact && styles.iconBadgeCompact]}>
+            <Icon color={colors.accent} size={compact ? 16 : 20} strokeWidth={2.2} />
+          </View>
         </View>
-      </View>
+      )}
 
-      <Text style={[styles.title, compact && styles.titleCompact]}>{title}</Text>
-      {message ? <Text style={styles.message}>{message}</Text> : null}
-
-      {actionLabel && onAction ? (
-        <Button label={actionLabel} variant="accent" onPress={onAction} style={styles.btn} />
+      {kicker && !compact ? <Text style={styles.kicker}>{kicker}</Text> : null}
+      <Text style={[styles.title, compact && styles.titleCompact, isTraining && styles.titleTraining]}>
+        {title}
+      </Text>
+      {message ? (
+        <Text style={[styles.message, isTraining && styles.messageTraining]}>{message}</Text>
       ) : null}
-      {secondaryLabel && onSecondary ? (
-        <Button label={secondaryLabel} variant="ghost" onPress={onSecondary} style={styles.btnSecondary} />
+
+      {(actionLabel && onAction) || (secondaryLabel && onSecondary) ? (
+        <View style={[styles.actions, compact && styles.actionsCompact]}>
+          {actionLabel && onAction ? (
+            <Button label={actionLabel} variant="accent" onPress={onAction} style={styles.btn} />
+          ) : null}
+          {secondaryLabel && onSecondary ? (
+            <Button
+              label={secondaryLabel}
+              variant="ghost"
+              onPress={onSecondary}
+              style={styles.btnSecondary}
+            />
+          ) : null}
+        </View>
       ) : null}
     </View>
   );
@@ -90,8 +122,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: spacing.xxl,
     paddingVertical: spacing.xxxl,
-    gap: 10,
+    gap: 8,
     minHeight: 280,
+  },
+  wrapTraining: {
+    gap: 0,
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xxxl + 8,
   },
   wrapCompact: {
     flex: 0,
@@ -99,23 +136,39 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xl,
     paddingHorizontal: spacing.md,
   },
+  heroMark: {
+    width: 112,
+    height: 112,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 28,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: "rgba(241,188,3,0.22)",
+  },
+  heroGlow: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 28,
+    backgroundColor: "rgba(241,188,3,0.08)",
+  },
   visual: {
-    width: 132,
-    height: 132,
+    width: 120,
+    height: 120,
     borderRadius: radii.xxl,
     backgroundColor: colors.surface,
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 10,
+    marginBottom: 14,
     borderWidth: 1,
     borderColor: colors.border,
   },
   visualCompact: {
-    width: 96,
-    height: 96,
+    width: 88,
+    height: 88,
     borderRadius: radii.xl,
-    marginBottom: 4,
+    marginBottom: 6,
   },
   slash: {
     position: "absolute",
@@ -131,15 +184,15 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.04)",
   },
   mark: {
-    opacity: 0.22,
+    opacity: 0.35,
   },
   iconBadge: {
     position: "absolute",
-    bottom: 12,
-    right: 12,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    bottom: 10,
+    right: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: colors.black,
     borderWidth: 1,
     borderColor: "rgba(241,188,3,0.45)",
@@ -147,19 +200,30 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   iconBadgeCompact: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     bottom: 8,
     right: 8,
+  },
+  kicker: {
+    color: colors.accent,
+    fontFamily: fonts.alumniScSemiBoldItalic,
+    fontSize: 13,
+    letterSpacing: 2,
+    marginBottom: 10,
   },
   title: {
     color: colors.white,
     fontFamily: fonts.alumniBoldItalic,
-    fontSize: 26,
-    lineHeight: 28,
+    fontSize: 28,
+    lineHeight: 30,
     textAlign: "center",
     letterSpacing: -0.3,
+  },
+  titleTraining: {
+    fontSize: 34,
+    lineHeight: 36,
   },
   titleCompact: {
     fontSize: 20,
@@ -172,7 +236,24 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     textAlign: "center",
     maxWidth: 300,
+    marginTop: 8,
   },
-  btn: { marginTop: 14, alignSelf: "stretch", maxWidth: 320 },
-  btnSecondary: { alignSelf: "stretch", maxWidth: 320 },
+  messageTraining: {
+    maxWidth: 280,
+    marginTop: 12,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  actions: {
+    width: "100%",
+    maxWidth: 320,
+    gap: 10,
+    marginTop: 28,
+  },
+  actionsCompact: {
+    marginTop: 16,
+    gap: 8,
+  },
+  btn: { alignSelf: "stretch" },
+  btnSecondary: { alignSelf: "stretch" },
 });
