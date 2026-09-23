@@ -7,16 +7,16 @@ import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 const GOALS = [
-  "Build muscle",
-  "Lose fat",
-  "Improve BJJ",
+  "Guard retention",
+  "Passing pressure",
   "Competition prep",
-  "Flexibility",
-  "General fitness",
+  "Improve BJJ / No-Gi",
+  "Takedowns & wrestling",
+  "Striking rounds",
 ];
 
 export default function GoalsScreen() {
-  const [selected, setSelected] = useState<string[]>(["Improve BJJ"]);
+  const [selected, setSelected] = useState<string[]>(["Improve BJJ / No-Gi"]);
 
   const toggle = (g: string) => {
     setSelected((prev) =>

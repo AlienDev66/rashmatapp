@@ -13,7 +13,7 @@ const PLANS = [
     name: "Pro Monthly",
     price: "€14.99",
     period: "/month",
-    perks: ["All creator programs", "Workout player", "Progress tracking"],
+    perks: ["All creator programs", "Session player", "Progress tracking"],
   },
   {
     id: "yearly",

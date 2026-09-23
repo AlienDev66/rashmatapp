@@ -24,7 +24,7 @@ const NOTIFS = [
   {
     id: "3",
     title: "Streak saved",
-    body: "You completed Day 2. Keep the 4-workout pace.",
+    body: "You completed Day 2. Keep the 4-session pace.",
     time: "2d ago",
     unread: false,
   },

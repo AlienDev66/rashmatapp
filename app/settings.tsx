@@ -68,7 +68,7 @@ export default function SettingsScreen() {
       <Text style={styles.section}>Notifications</Text>
       <View style={styles.group}>
         <ToggleRow
-          label="Workout reminders"
+          label="Training reminders"
           value={workoutReminders}
           onValueChange={(v) => {
             setWorkoutReminders(v);
