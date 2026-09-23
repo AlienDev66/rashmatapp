@@ -6,6 +6,10 @@ export const brand = {
   email: "hello@rashmat.app",
   supportEmail: "support@rashmat.app",
   scheme: "rashmat",
+  community: {
+    discord: "https://discord.gg/rashmat",
+    label: "RASHMAT Community",
+  },
   social: {
     instagram: "https://www.instagram.com/rashmatapp/",
     tiktok: "https://tiktok.com/@rashmatapp",

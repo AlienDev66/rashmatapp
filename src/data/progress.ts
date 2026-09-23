@@ -80,7 +80,7 @@ export async function completeSession(opts: {
   }
 
   if (!isSupabaseConfigured) {
-    return { error: null, xp: xpFallback };
+    return { error: null, xp: xpFallback, newMedals: [] as { id: string; title: string; xp: number }[] };
   }
 
   try {
@@ -92,12 +92,25 @@ export async function completeSession(opts: {
     if (error) {
       // Soft-fail: local complete already saved; player can advance
       if (__DEV__) console.warn("[RASHMAT] complete_session RPC failed", error.message);
-      return { error: null, xp: xpFallback, offline: true as const };
+      return { error: null, xp: xpFallback, offline: true as const, newMedals: [] as { id: string; title: string; xp: number }[] };
     }
-    return { error: null, xp: data?.xp_earned ?? xpFallback, row: data };
+
+    let newMedals: { id: string; title: string; xp: number }[] = [];
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const uid = userData.user?.id;
+      if (uid) {
+        const { evaluateAndAwardMedals } = await import("@/src/data/achievements");
+        newMedals = await evaluateAndAwardMedals(uid);
+      }
+    } catch {
+      /* best-effort medals */
+    }
+
+    return { error: null, xp: data?.xp_earned ?? xpFallback, row: data, newMedals };
   } catch (e) {
     if (__DEV__) console.warn("[RASHMAT] complete_session network error", e);
-    return { error: null, xp: xpFallback, offline: true as const };
+    return { error: null, xp: xpFallback, offline: true as const, newMedals: [] as { id: string; title: string; xp: number }[] };
   }
 }
 
