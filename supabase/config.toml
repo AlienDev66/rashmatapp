@@ -1,0 +1,23 @@
+# A string used to distinguish different Supabase projects on the same host
+project_id = "rashmat"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[auth]
+enabled = true
+site_url = "rashmat://auth/callback"
+additional_redirect_urls = ["rashmat://auth/callback", "rashmat://**", "exp://**"]
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false
