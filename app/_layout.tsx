@@ -90,6 +90,12 @@ export default function RootLayout() {
             <Stack.Screen name="notifications" />
             <Stack.Screen name="personal-info" />
             <Stack.Screen name="search" />
+            <Stack.Screen name="library" />
+            <Stack.Screen name="achievements" />
+            <Stack.Screen name="medals" />
+            <Stack.Screen name="leaderboard" />
+            <Stack.Screen name="workout-logs" />
+            <Stack.Screen name="referrals" />
             <Stack.Screen name="creator-programs/[id]" />
           </Stack>
         </View>

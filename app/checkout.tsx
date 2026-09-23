@@ -35,9 +35,21 @@ export default function CheckoutScreen() {
         Alert.alert("Could not unlock", error);
         return;
       }
-      Alert.alert("Unlocked (demo)", "Payments come in phase 2. You’re enrolled.", [
-        { text: "Open hub", onPress: () => router.replace("/(tabs)") },
-      ]);
+      // Prefetch catalog to find first session
+      try {
+        const { fetchCatalog } = await import("@/src/data/catalog");
+        const cat = await fetchCatalog();
+        const first = cat.sessions
+          .filter((s) => s.programId === programId)
+          .sort((a, b) => a.day - b.day)[0];
+        if (first) {
+          router.replace(`/workout/${first.id}`);
+          return;
+        }
+      } catch {
+        /* fall through */
+      }
+      router.replace(`/program/${programId}`);
       return;
     }
     const membership = plan === "monthly" ? "Pro Monthly" : "Pro Yearly";
