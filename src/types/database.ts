@@ -30,6 +30,8 @@ export type Database = {
           notification_prefs: Json;
           is_creator: boolean;
           creator_slug: string | null;
+          referral_code: string | null;
+          referred_by: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -49,6 +51,8 @@ export type Database = {
           notification_prefs?: Json;
           is_creator?: boolean;
           creator_slug?: string | null;
+          referral_code?: string | null;
+          referred_by?: string | null;
         };
         Update: {
           id?: string;
@@ -66,6 +70,8 @@ export type Database = {
           notification_prefs?: Json;
           is_creator?: boolean;
           creator_slug?: string | null;
+          referral_code?: string | null;
+          referred_by?: string | null;
         };
         Relationships: [];
       };
@@ -259,6 +265,7 @@ export type Database = {
           exercise_id: string;
           set_number: number;
           reps_logged: number;
+          note: string | null;
           created_at: string;
         };
         Insert: {
@@ -267,8 +274,61 @@ export type Database = {
           exercise_id: string;
           set_number: number;
           reps_logged: number;
+          note?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["set_logs"]["Insert"]>;
+        Relationships: [];
+      };
+      medal_definitions: {
+        Row: {
+          id: string;
+          title: string;
+          summary: string;
+          category: string;
+          xp_reward: number;
+          sort_order: number;
+          icon_key: string;
+        };
+        Insert: {
+          id: string;
+          title: string;
+          summary: string;
+          category?: string;
+          xp_reward?: number;
+          sort_order?: number;
+          icon_key?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["medal_definitions"]["Insert"]>;
+        Relationships: [];
+      };
+      user_medals: {
+        Row: {
+          user_id: string;
+          medal_id: string;
+          awarded_at: string;
+          meta: Json;
+        };
+        Insert: {
+          user_id: string;
+          medal_id: string;
+          awarded_at?: string;
+          meta?: Json;
+        };
+        Update: Partial<Database["public"]["Tables"]["user_medals"]["Insert"]>;
+        Relationships: [];
+      };
+      user_program_favorites: {
+        Row: {
+          user_id: string;
+          program_id: string;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          program_id: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["user_program_favorites"]["Insert"]>;
         Relationships: [];
       };
       session_completions: {
@@ -364,6 +424,43 @@ export type Database = {
       save_program_day_order: {
         Args: { p_program_id: string; p_session_ids: string[] };
         Returns: Database["public"]["Tables"]["user_program_enrollments"]["Row"];
+      };
+      award_medal: {
+        Args: { p_medal_id: string; p_meta?: Json };
+        Returns: Json;
+      };
+      ensure_referral_code: {
+        Args: Record<string, never>;
+        Returns: string;
+      };
+      apply_referral_code: {
+        Args: { p_code: string };
+        Returns: Json;
+      };
+      restart_program: {
+        Args: { p_program_id: string };
+        Returns: Database["public"]["Tables"]["user_program_enrollments"]["Row"];
+      };
+      leaderboard_global: {
+        Args: { p_period?: string; p_limit?: number };
+        Returns: {
+          user_id: string;
+          full_name: string;
+          avatar_url: string | null;
+          xp: number;
+          rank: number;
+        }[];
+      };
+      leaderboard_program: {
+        Args: { p_program_id: string; p_limit?: number };
+        Returns: {
+          user_id: string;
+          full_name: string;
+          avatar_url: string | null;
+          xp: number;
+          sessions_done: number;
+          rank: number;
+        }[];
       };
     };
     Enums: Record<string, never>;
