@@ -4,6 +4,7 @@ import { WeekDayStrip } from "@/src/components/train/WeekDayStrip";
 import { BrandMark } from "@/src/components/ui/BrandMark";
 import { QueryGate } from "@/src/components/ui/QueryGate";
 import { Screen } from "@/src/components/ui/Screen";
+import { enrollProgram } from "@/src/data/progress";
 import { useCatalog } from "@/src/hooks/useCatalog";
 import { useProgress } from "@/src/hooks/useProgress";
 import {
@@ -21,6 +22,7 @@ import { router, useFocusEffect } from "expo-router";
 import { Bell, Menu } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -29,8 +31,10 @@ import {
   View,
 } from "react-native";
 
+const FLAGSHIP_ID = "mat-foundations";
+
 export default function HomeScreen() {
-  const { profile, refreshProfile } = useAuth();
+  const { profile, user, refreshProfile } = useAuth();
   const {
     programs,
     sessions,
@@ -129,6 +133,42 @@ export default function HomeScreen() {
     router.push(`/workout/${sessionId}`);
   };
 
+  const flagship =
+    programs.find((p) => p.id === FLAGSHIP_ID) ??
+    programs.find((p) => !p.isPremium) ??
+    programs[0] ??
+    null;
+
+  const [startingFlagship, setStartingFlagship] = useState(false);
+
+  const startFlagship = async () => {
+    if (!flagship) {
+      router.push("/(tabs)/programs");
+      return;
+    }
+    if (!user) {
+      Alert.alert("Sign in required", "Create an account to start this camp.");
+      router.push("/(auth)/sign-in");
+      return;
+    }
+    if (flagship.isPremium) {
+      router.push({ pathname: "/checkout", params: { programId: flagship.id } });
+      return;
+    }
+    setStartingFlagship(true);
+    try {
+      await enrollProgram(flagship.id);
+      await reloadProgress();
+      const first = orderedProgramSessions(sessions, flagship.id, [])[0];
+      if (first) router.replace(`/workout/${first.id}`);
+      else router.replace(`/program/${flagship.id}`);
+    } catch (e) {
+      Alert.alert("Could not start", e instanceof Error ? e.message : "Try again");
+    } finally {
+      setStartingFlagship(false);
+    }
+  };
+
   return (
     <Screen padded={false}>
       <ScrollView
@@ -145,16 +185,25 @@ export default function HomeScreen() {
         }
       >
         <QueryGate
-          loading={loading}
+          loading={loading || startingFlagship}
           error={error}
           empty={!enrolled || !activeProgram}
           emptyTone="training"
-          emptyTitle="Pick your first camp"
-          emptyMessage="Browse creator programs, unlock one, and your week + next session show up here."
-          emptyActionLabel="Browse programs  →"
-          emptyOnAction={() => router.push("/(tabs)/programs")}
-          emptySecondaryLabel="Meet creators"
-          emptyOnSecondary={() => router.push("/(tabs)/creators")}
+          emptyTitle={flagship ? `Start ${flagship.title}` : "Pick your first camp"}
+          emptyMessage={
+            flagship
+              ? "Auto-enroll your flagship camp and jump straight into week one — week strip + next session show up here."
+              : "Browse creator programs, unlock one, and your week + next session show up here."
+          }
+          emptyActionLabel={
+            flagship ? "Start this camp  →" : "Browse programs  →"
+          }
+          emptyOnAction={() => {
+            if (flagship) void startFlagship();
+            else router.push("/(tabs)/programs");
+          }}
+          emptySecondaryLabel="Browse all programs"
+          emptyOnSecondary={() => router.push("/(tabs)/programs")}
           onRetry={onRefresh}
           offline={!online}
         >
@@ -235,6 +284,19 @@ export default function HomeScreen() {
         </QueryGate>
       </ScrollView>
 
+      {activeProgram && selectedDay?.session ? (
+        <View style={styles.stickyCta}>
+          <Pressable
+            style={styles.stickyBtn}
+            onPress={() => goWorkout(selectedDay.session!.id)}
+          >
+            <Text style={styles.stickyBtnText}>
+              Start Day {selectedDay.dayInWeek}  →
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
+
       <ProgramDrawer
         visible={drawerOpen}
         onClose={() => setDrawerOpen(false)}
@@ -250,6 +312,9 @@ export default function HomeScreen() {
         onOpenProgress={(id) => router.push(`/progress/${id}`)}
         onOpenOverview={(id) => router.push(`/program/${id}`)}
         onOpenStudio={() => router.push("/studio")}
+        onOpenLibrary={() => router.push("/library")}
+        onOpenLogs={() => router.push("/workout-logs")}
+        onOpenAchievements={() => router.push("/achievements")}
       />
     </Screen>
   );
@@ -258,7 +323,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   content: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: 28,
+    paddingBottom: 88,
     gap: spacing.xl,
   },
   contentEmpty: {
@@ -334,4 +399,21 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceElevated,
   },
   segmentOn: { backgroundColor: colors.accent },
+  stickyCta: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: 10,
+    paddingTop: 8,
+    backgroundColor: colors.bg,
+  },
+  stickyBtn: {
+    backgroundColor: colors.accent,
+    borderRadius: radii.lg,
+    paddingVertical: 16,
+    alignItems: "center",
+  },
+  stickyBtnText: {
+    color: colors.black,
+    fontFamily: fonts.poppinsSemiBold,
+    fontSize: 15,
+  },
 });

@@ -7,9 +7,11 @@ import { colors, fonts, radii, spacing } from "@/src/theme";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const FLAGSHIP_ID = "mat-foundations";
 
 export default function RecommendationsScreen() {
   const insets = useSafeAreaInsets();
@@ -17,8 +19,15 @@ export default function RecommendationsScreen() {
   const { programs, sessions } = useCatalog();
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  // Prefer published grappling-friendly programs; catalog RLS already hides drafts for athletes
-  const picks = programs.slice(0, 3);
+  const picks = useMemo(() => {
+    const sorted = [...programs].sort((a, b) => {
+      if (a.id === FLAGSHIP_ID) return -1;
+      if (b.id === FLAGSHIP_ID) return 1;
+      return Number(!!a.isPremium) - Number(!!b.isPremium);
+    });
+    return sorted.slice(0, 3);
+  }, [programs]);
+
   const primary = picks[0];
 
   const firstSessionId = (programId: string) => {
@@ -32,6 +41,11 @@ export default function RecommendationsScreen() {
     if (!user) {
       Alert.alert("Sign in required", "Create an account to start this camp.");
       router.push("/(auth)/sign-in");
+      return;
+    }
+    const program = programs.find((p) => p.id === programId);
+    if (program?.isPremium) {
+      router.push({ pathname: "/checkout", params: { programId } });
       return;
     }
     setBusyId(programId);
@@ -55,7 +69,7 @@ export default function RecommendationsScreen() {
       <Text style={styles.kicker}>YOU&apos;RE SET</Text>
       <Text style={styles.title}>Your first camp</Text>
       <Text style={styles.sub}>
-        Pick a creator program, complete session one, and build the habit — drills, rounds, progress.
+        Start the flagship camp, complete session one, and build the habit — drills, rounds, progress.
       </Text>
 
       {picks.length === 0 ? (
@@ -83,6 +97,7 @@ export default function RecommendationsScreen() {
                   style={StyleSheet.absoluteFill}
                 />
                 {index === 0 ? <Text style={styles.badge}>START HERE</Text> : null}
+                {p.isPremium ? <Text style={styles.premiumBadge}>PREMIUM</Text> : null}
                 <Text style={styles.cardTitle}>{p.title}</Text>
                 <Text style={styles.cardDesc} numberOfLines={2}>
                   {p.description}
@@ -95,7 +110,11 @@ export default function RecommendationsScreen() {
             <View style={styles.ctaCol}>
               <Button
                 label={
-                  busyId === primary.id ? "Starting…" : "Start first session  →"
+                  busyId === primary.id
+                    ? "Starting…"
+                    : primary.isPremium
+                      ? "Unlock first camp  →"
+                      : "Start this camp  →"
                 }
                 variant="accent"
                 loading={busyId === primary.id}
@@ -155,6 +174,19 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     color: colors.black,
     backgroundColor: colors.accent,
+    fontFamily: fonts.poppinsSemiBold,
+    fontSize: 10,
+    letterSpacing: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginBottom: 8,
+    overflow: "hidden",
+  },
+  premiumBadge: {
+    alignSelf: "flex-start",
+    color: colors.white,
+    backgroundColor: "rgba(0,0,0,0.55)",
     fontFamily: fonts.poppinsSemiBold,
     fontSize: 10,
     letterSpacing: 1,

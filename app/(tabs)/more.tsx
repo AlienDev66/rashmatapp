@@ -8,25 +8,37 @@ import { colors, fonts, radii, spacing, typography } from "@/src/theme";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useFocusEffect } from "expo-router";
-import { CreditCard, LogOut, MapPin, Settings, Trophy, User } from "lucide-react-native";
-import { useCallback } from "react";
+import { CreditCard, Clapperboard, BookOpen, Gift, LogOut, MapPin, MessageCircle, Settings, Trophy, User, Bell } from "lucide-react-native";
+import { useCallback, useState } from "react";
 import {
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { fetchAthleteStats } from "@/src/data/achievements";
 
 export default function MoreScreen() {
   const { profile, user, signOut, refreshProfile } = useAuth();
   const { programs } = useCatalog();
   const { enrollments } = useProgress();
+  const [stats, setStats] = useState({ streak: 0, sessions: 0, camps: 0 });
 
   useFocusEffect(
     useCallback(() => {
       void refreshProfile();
-    }, [refreshProfile]),
+      if (user?.id) {
+        void fetchAthleteStats(user.id, profile?.xp ?? 0).then((s) => {
+          setStats({
+            streak: s.streakDays,
+            sessions: s.totalSessions,
+            camps: s.campsCompleted,
+          });
+        });
+      }
+    }, [refreshProfile, user?.id, profile?.xp]),
   );
 
   const name = (profile?.full_name ?? user?.email?.split("@")[0] ?? "Athlete").toUpperCase();
@@ -65,6 +77,9 @@ export default function MoreScreen() {
             <Trophy color={colors.accent} size={14} />
             <Text style={styles.xp}>{profile?.xp ?? 0} XP</Text>
           </View>
+          <Pressable onPress={() => router.push("/achievements")}>
+            <Text style={styles.achievementsLink}>Achievements ›</Text>
+          </Pressable>
           <View style={styles.meta}>
             <MapPin color={colors.textMuted} size={12} />
             <Text style={styles.metaText}>
@@ -79,12 +94,9 @@ export default function MoreScreen() {
         </Pressable>
 
         <View style={styles.stats}>
-          <Stat value={String(profile?.xp ?? 0)} unit="XP" />
-          <Stat value={String(enrollments.length)} unit="camps" />
-          <Stat
-            value={profile?.weight_kg != null ? String(profile.weight_kg) : "—"}
-            unit="kg"
-          />
+          <Stat value={String(stats.streak)} unit="streak" />
+          <Stat value={String(stats.sessions)} unit="sessions" />
+          <Stat value={String(stats.camps)} unit="camps" />
         </View>
 
         <Text style={styles.section}>YOUR PROGRAMS</Text>
@@ -129,13 +141,43 @@ export default function MoreScreen() {
 
         <View style={styles.menu}>
           <MenuRow
+            icon={<Trophy color={colors.accent} size={20} />}
+            title="Achievements"
+            sub="XP, medals, streak & leaderboard"
+            onPress={() => router.push("/achievements")}
+          />
+          <MenuRow
+            icon={<BookOpen color={colors.accent} size={20} />}
+            title="Rules library"
+            sub="IBJJF, ADCC, AJP & boxing divisions"
+            onPress={() => router.push("/library")}
+          />
+          <MenuRow
+            icon={<MessageCircle color={colors.accent} size={20} />}
+            title="Community"
+            sub={brand.community.label}
+            onPress={() => void Linking.openURL(brand.community.discord)}
+          />
+          <MenuRow
+            icon={<Gift color={colors.accent} size={20} />}
+            title="Invite a training partner"
+            sub="Share your code · earn medals"
+            onPress={() => router.push("/referrals")}
+          />
+          <MenuRow
+            icon={<Bell color={colors.accent} size={20} />}
+            title="Manage notifications"
+            sub="Reminders & creator updates"
+            onPress={() => router.push("/settings")}
+          />
+          <MenuRow
             icon={<User color={colors.accent} size={20} />}
             title="Personal information"
             sub="Edit name, city, age, weight"
             onPress={() => router.push("/personal-info")}
           />
           <MenuRow
-            icon={<CreditCard color={colors.accent} size={20} />}
+            icon={<Clapperboard color={colors.accent} size={20} />}
             title="Creator Studio"
             sub="Publish programs & track students"
             onPress={() => router.push("/studio")}
@@ -143,7 +185,7 @@ export default function MoreScreen() {
           <MenuRow
             icon={<CreditCard color={colors.accent} size={20} />}
             title="Subscriptions"
-            sub="Manage your subscriptions"
+            sub="Manage your membership"
             onPress={() => router.push("/subscriptions")}
           />
         </View>
@@ -229,6 +271,12 @@ const styles = StyleSheet.create({
   },
   xpRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   xp: { color: colors.textMuted, fontFamily: fonts.poppinsRegular, fontSize: 13 },
+  achievementsLink: {
+    color: colors.accent,
+    fontFamily: fonts.poppinsSemiBold,
+    fontSize: 12,
+    marginTop: 4,
+  },
   meta: { flexDirection: "row", alignItems: "center", gap: 4 },
   membership: { flexDirection: "row", alignItems: "center", gap: 4 },
   metaText: { color: colors.textMuted, fontFamily: fonts.poppinsRegular, fontSize: 12 },
