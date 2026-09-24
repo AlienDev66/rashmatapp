@@ -331,6 +331,20 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["user_program_favorites"]["Insert"]>;
         Relationships: [];
       };
+      creator_follows: {
+        Row: {
+          follower_id: string;
+          creator_id: string;
+          created_at: string;
+        };
+        Insert: {
+          follower_id: string;
+          creator_id: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["creator_follows"]["Insert"]>;
+        Relationships: [];
+      };
       session_completions: {
         Row: {
           id: string;
@@ -460,6 +474,40 @@ export type Database = {
           xp: number;
           sessions_done: number;
           rank: number;
+        }[];
+      };
+      toggle_creator_follow: {
+        Args: { p_creator_id: string };
+        Returns: Json;
+      };
+      creator_follow_stats: {
+        Args: { p_creator_id: string };
+        Returns: Json;
+      };
+      list_creator_followers: {
+        Args: { p_creator_id: string; p_limit?: number };
+        Returns: {
+          user_id: string;
+          full_name: string;
+          avatar_url: string | null;
+          followed_at: string;
+        }[];
+      };
+      list_my_following: {
+        Args: { p_limit?: number };
+        Returns: {
+          creator_id: string;
+          followed_at: string;
+        }[];
+      };
+      my_creator_followers: {
+        Args: { p_limit?: number };
+        Returns: {
+          user_id: string;
+          full_name: string;
+          avatar_url: string | null;
+          followed_at: string;
+          creator_id: string;
         }[];
       };
     };
