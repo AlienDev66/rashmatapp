@@ -8,7 +8,7 @@ import { colors, fonts, radii, spacing, typography } from "@/src/theme";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useFocusEffect } from "expo-router";
-import { CreditCard, Clapperboard, BookOpen, Gift, LogOut, MapPin, MessageCircle, Settings, Trophy, User, Bell } from "lucide-react-native";
+import { CreditCard, Clapperboard, BookOpen, Gift, LogOut, MapPin, MessageCircle, Settings, Trophy, User, Bell, Users } from "lucide-react-native";
 import { useCallback, useState } from "react";
 import {
   Linking,
@@ -151,6 +151,12 @@ export default function MoreScreen() {
             title="Rules library"
             sub="IBJJF, ADCC, AJP & boxing divisions"
             onPress={() => router.push("/library")}
+          />
+          <MenuRow
+            icon={<Users color={colors.accent} size={20} />}
+            title="Following"
+            sub="Creators you follow · train with them"
+            onPress={() => router.push("/following")}
           />
           <MenuRow
             icon={<MessageCircle color={colors.accent} size={20} />}
