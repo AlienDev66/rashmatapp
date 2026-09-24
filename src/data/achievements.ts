@@ -109,6 +109,7 @@ export async function fetchAthleteStats(userId: string, profileXp = 0): Promise<
   let completionDates: string[] = [];
   let campsCompleted = 0;
   let hasFavorite = false;
+  let hasFollow = false;
   let isEarlyMember = false;
   let referralUnlocks = medals.some((m) => m.medalId === "referral-1") ? 1 : 0;
 
@@ -116,14 +117,16 @@ export async function fetchAthleteStats(userId: string, profileXp = 0): Promise<
     const since = new Date();
     since.setDate(since.getDate() - 7);
 
-    const [{ data: completions }, { data: favs }, { data: profile }] = await Promise.all([
-      supabase
-        .from("session_completions")
-        .select("session_id, completed_at")
-        .eq("user_id", userId),
-      supabase.from("user_program_favorites").select("program_id").eq("user_id", userId).limit(1),
-      supabase.from("profiles").select("created_at, xp").eq("id", userId).maybeSingle(),
-    ]);
+    const [{ data: completions }, { data: favs }, { data: follows }, { data: profile }] =
+      await Promise.all([
+        supabase
+          .from("session_completions")
+          .select("session_id, completed_at")
+          .eq("user_id", userId),
+        supabase.from("user_program_favorites").select("program_id").eq("user_id", userId).limit(1),
+        supabase.from("creator_follows").select("creator_id").eq("follower_id", userId).limit(1),
+        supabase.from("profiles").select("created_at, xp").eq("id", userId).maybeSingle(),
+      ]);
 
     completionDates = (completions ?? []).map((c) => c.completed_at as string);
     totalSessions = completions?.length ?? 0;
@@ -131,6 +134,7 @@ export async function fetchAthleteStats(userId: string, profileXp = 0): Promise<
       (c) => new Date(c.completed_at as string) >= since,
     ).length;
     hasFavorite = (favs?.length ?? 0) > 0;
+    hasFollow = (follows?.length ?? 0) > 0;
 
     const created = profile?.created_at ? new Date(profile.created_at) : null;
     // Early window through end of 2026
@@ -164,6 +168,7 @@ export async function fetchAthleteStats(userId: string, profileXp = 0): Promise<
     xp: profileXp,
     isEarlyMember,
     hasFavorite,
+    hasFollow,
     referralUnlocks,
     medals,
   };
