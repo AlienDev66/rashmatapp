@@ -68,11 +68,9 @@ export default function RecommendationsScreen() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 16 }]}>
-      <Text style={styles.kicker}>YOU&apos;RE SET</Text>
-      <Text style={styles.title}>Your first camp</Text>
-      <Text style={styles.sub}>
-        Start the flagship camp, complete session one, and build the habit — drills, rounds, progress.
-      </Text>
+      <Text style={styles.kicker}>{t("authExtra.youreSet")}</Text>
+      <Text style={styles.title}>{t("extra.firstCampTitle")}</Text>
+      <Text style={styles.sub}>{t("extra.firstCampSub")}</Text>
 
       {picks.length === 0 ? (
         <EmptyState

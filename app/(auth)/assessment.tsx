@@ -19,7 +19,10 @@ export default function AssessmentScreen() {
 
   const stepIndex = Math.min(currentStep, ASSESSMENT_TOTAL - 1);
   const step = ASSESSMENT_STEPS[stepIndex];
-  const progress = `${stepIndex + 1} of ${ASSESSMENT_TOTAL}`;
+  const progress = t("extra.stepOf", {
+    current: stepIndex + 1,
+    total: ASSESSMENT_TOTAL,
+  });
 
   const selected = answers[step.id];
   const canContinue = useMemo(() => {
@@ -79,7 +82,7 @@ export default function AssessmentScreen() {
     <View style={[styles.root, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]}>
       <View style={styles.header}>
         <BackButton onPress={goBack} />
-        <Text style={styles.headerTitle}>Assessment</Text>
+        <Text style={styles.headerTitle}>{t("authExtra.assessmentTitle")}</Text>
         <View style={styles.step}>
           <Text style={styles.stepText}>{progress}</Text>
         </View>
@@ -95,13 +98,13 @@ export default function AssessmentScreen() {
         {step.type === "gender" ? (
           <View style={styles.genderCards}>
             <GenderCard
-              label="♂ Male"
+              label={t("extra.maleOption")}
               image={images.avatar}
               selected={selected === "male"}
               onPress={() => setSingle("male")}
             />
             <GenderCard
-              label="♀ Female"
+              label={t("extra.femaleOption")}
               image={images.woman}
               selected={selected === "female"}
               onPress={() => setSingle("female")}
@@ -156,7 +159,7 @@ export default function AssessmentScreen() {
           <Button label={t("authExtra.skipThanks")} variant="soft" onPress={goNext} />
         ) : null}
         <Button
-          label="Go  →"
+          label={t("auth.go")}
           onPress={goNext}
           disabled={step.type === "number" ? false : !canContinue && !step.skippable}
         />

@@ -20,19 +20,23 @@ export default function SubscriptionsScreen() {
       <View style={styles.card}>
         <Text style={styles.badge}>{t("screens.active")}</Text>
         <Text style={styles.plan}>Pro Yearly</Text>
-        <Text style={styles.meta}>Renews Jun 20, 2027 · €119/year</Text>
+        <Text style={styles.meta}>{t("extra.renewsDemo")}</Text>
       </View>
 
       <View style={styles.group}>
-        <Row label="Billing email" value={brand.email} />
-        <Row label="Payment method" value="Visa ···· 4242" />
-        <Row label="Next invoice" value="€119.00" />
-        <Row label="Support" value={brand.supportEmail} />
+        <Row label={t("screens.billingEmail")} value={brand.email} />
+        <Row label={t("screens.paymentMethod")} value="Visa ···· 4242" />
+        <Row label={t("screens.nextInvoice")} value="€119.00" />
+        <Row label={t("screens.support")} value={brand.supportEmail} />
       </View>
 
       <View style={{ marginTop: "auto", gap: 12 }}>
-        <Button label="Change plan" variant="surface" onPress={() => router.push("/paywall")} />
-        <Button label="Cancel subscription" variant="danger" onPress={() => {}} />
+        <Button
+          label={t("screens.changePlan")}
+          variant="surface"
+          onPress={() => router.push("/paywall")}
+        />
+        <Button label={t("screens.cancelSub")} variant="danger" onPress={() => {}} />
       </View>
     </Screen>
   );

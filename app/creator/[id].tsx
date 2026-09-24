@@ -63,7 +63,7 @@ export default function CreatorProfileScreen() {
 
   const onToggleFollow = async () => {
     if (!creator || !user) {
-      Alert.alert("Sign in required", "Sign in to follow creators.");
+      Alert.alert(t("creators.signInRequired"), t("creators.signInBody"));
       router.push("/(auth)/sign-in");
       return;
     }
@@ -71,7 +71,7 @@ export default function CreatorProfileScreen() {
     const result = await toggleCreatorFollow(creator.id, user.id);
     setFollowBusy(false);
     if (result.error) {
-      Alert.alert("Couldn’t update", result.error);
+      Alert.alert(t("creators.updateFailed"), result.error);
       return;
     }
     setStats({ following: result.following, followerCount: result.followerCount });
@@ -90,9 +90,9 @@ export default function CreatorProfileScreen() {
         error={error}
         empty={!creator}
         emptyTone="missing"
-        emptyTitle="Creator not found"
-        emptyMessage="This profile may have been removed or is still unpublished."
-        emptyActionLabel="Browse creators  →"
+        emptyTitle={t("extra.creatorNotFound")}
+        emptyMessage={t("extra.creatorNotFoundBody")}
+        emptyActionLabel={t("extra.browseCreators")}
         emptyOnAction={() => router.replace("/(tabs)/creators")}
         onRetry={refresh}
         offline={!online}
@@ -116,7 +116,7 @@ export default function CreatorProfileScreen() {
                 <Avatar uri={creator.avatarUrl} name={creator.name} size={72} ring />
                 <View style={styles.badgeRow}>
                   <Text style={styles.certified}>
-                    {(creator.role || "Certified Trainer").toUpperCase()}
+                    {(creator.role || t("extra.certifiedTrainer")).toUpperCase()}
                   </Text>
                   {creator.verified ? (
                     <BadgeCheck color={colors.black} fill={colors.accent} size={18} />
@@ -146,7 +146,9 @@ export default function CreatorProfileScreen() {
 
               <View style={styles.metaRow}>
                 <Text style={styles.metaText}>
-                  {creatorPrograms.length} program{creatorPrograms.length === 1 ? "" : "s"}
+                  {creatorPrograms.length === 1
+                    ? t("extra.programCountOne")
+                    : t("extra.programCountMany", { n: creatorPrograms.length })}
                 </Text>
                 <Text style={styles.metaDot}>·</Text>
                 <Pressable
@@ -154,7 +156,9 @@ export default function CreatorProfileScreen() {
                   hitSlop={8}
                 >
                   <Text style={styles.metaLink}>
-                    {stats.followerCount} follower{stats.followerCount === 1 ? "" : "s"}
+                    {stats.followerCount === 1
+                      ? t("extra.followerCountOne")
+                      : t("extra.followerCountMany", { n: stats.followerCount })}
                   </Text>
                 </Pressable>
               </View>
@@ -171,7 +175,9 @@ export default function CreatorProfileScreen() {
                   onPress={() => void onToggleFollow()}
                   disabled={followBusy}
                   accessibilityRole="button"
-                  accessibilityLabel={stats.following ? "Following" : "Follow"}
+                  accessibilityLabel={
+                    stats.following ? t("creators.followingChip") : t("creators.follow")
+                  }
                 >
                   {followBusy ? (
                     <ActivityIndicator
@@ -187,7 +193,9 @@ export default function CreatorProfileScreen() {
                         !firstProgram && !stats.following && styles.followLabelOnPrimary,
                       ]}
                     >
-                      {stats.following ? "Following" : "Follow"}
+                      {stats.following
+                        ? t("creators.followingChip")
+                        : t("creators.follow")}
                     </Text>
                   )}
                 </Pressable>
@@ -203,13 +211,13 @@ export default function CreatorProfileScreen() {
               </View>
 
               <View style={styles.programsHeader}>
-                <Text style={styles.programsTitle}>PROGRAMS</Text>
+                <Text style={styles.programsTitle}>{t("creator.programs")}</Text>
                 {creatorPrograms.length > 1 ? (
                   <Pressable
                     onPress={() => router.push(`/creator-programs/${creator.id}`)}
                     hitSlop={8}
                   >
-                    <Text style={styles.seeAll}>See all</Text>
+                    <Text style={styles.seeAll}>{t("extra.seeAll")}</Text>
                   </Pressable>
                 ) : null}
               </View>
@@ -220,7 +228,7 @@ export default function CreatorProfileScreen() {
                 compact
                 tone="programs"
                 title={t("creator.noPrograms")}
-                message="This creator hasn’t published a camp. Check back soon."
+                message={t("extra.noCampYet")}
               />
             ) : (
               <ScrollView

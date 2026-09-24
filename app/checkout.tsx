@@ -18,14 +18,14 @@ export default function CheckoutScreen() {
 
   const isProgramUnlock = !!programId;
   const label = isProgramUnlock
-    ? "Program unlock · Demo"
+    ? t("extra.programUnlockDemo")
     : plan === "monthly"
-      ? "Pro Monthly · Demo"
-      : "Pro Yearly · Demo";
+      ? t("extra.proMonthlyDemo")
+      : t("extra.proYearlyDemo");
 
   const onConfirm = async () => {
     if (!user) {
-      Alert.alert("Sign in required", "Sign in to unlock.");
+      Alert.alert(t("common.signInRequired"), t("extra.signInToUnlock"));
       router.push("/(auth)/sign-in");
       return;
     }
@@ -34,7 +34,7 @@ export default function CheckoutScreen() {
       const { error } = await demoUnlockProgram(programId);
       setBusy(false);
       if (error) {
-        Alert.alert("Could not unlock", error);
+        Alert.alert(t("extra.couldNotUnlock"), error);
         return;
       }
       // Prefetch catalog to find first session
@@ -58,7 +58,7 @@ export default function CheckoutScreen() {
     const { error } = await updateProfile({ membership });
     setBusy(false);
     if (error) {
-      Alert.alert("Could not activate", error);
+      Alert.alert(t("extra.couldNotActivate"), error);
       return;
     }
     await refreshProfile();
@@ -76,22 +76,22 @@ export default function CheckoutScreen() {
       <View style={styles.summary}>
         <Text style={styles.summaryLabel}>{t("screens.selected")}</Text>
         <Text style={styles.summaryValue}>{label}</Text>
-        <Text style={styles.note}>Demo checkout — no real charge. Unlocks access for testing.</Text>
+        <Text style={styles.note}>{t("extra.checkoutNote")}</Text>
       </View>
 
       <Text style={styles.section}>{t("screens.paymentDemo")}</Text>
       <View style={styles.form}>
-        <TextField placeholder="Cardholder name" />
-        <TextField placeholder="Card number" keyboardType="number-pad" />
+        <TextField placeholder={t("screens.cardholder")} />
+        <TextField placeholder={t("screens.cardNumber")} keyboardType="number-pad" />
         <View style={styles.row}>
-          <TextField placeholder="MM/YY" style={{ flex: 1 }} />
-          <TextField placeholder="CVC" style={{ flex: 1 }} keyboardType="number-pad" />
+          <TextField placeholder={t("screens.mmyy")} style={{ flex: 1 }} />
+          <TextField placeholder={t("screens.cvc")} style={{ flex: 1 }} keyboardType="number-pad" />
         </View>
       </View>
 
       <View style={{ marginTop: "auto" }}>
         <Button
-          label={busy ? "Unlocking…" : "Confirm (demo)  →"}
+          label={busy ? t("extra.unlocking") : t("extra.confirmDemo")}
           variant="accent"
           disabled={busy}
           onPress={() => void onConfirm()}

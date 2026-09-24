@@ -33,9 +33,9 @@ export default function ForgotPasswordScreen() {
     }
     setSent(true);
     Alert.alert(
-      "Check your email",
-      "Open the reset link on this device. It will return you to RASHMAT to set a new password.",
-      [{ text: "OK", onPress: () => router.push("/(auth)/reset-password") }],
+      t("authExtra.checkEmail"),
+      t("authExtra.checkEmailBody"),
+      [{ text: t("common.ok"), onPress: () => router.push("/(auth)/reset-password") }],
     );
   };
 

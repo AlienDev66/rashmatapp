@@ -26,7 +26,7 @@ export default function NotificationsScreen() {
         message={t("screens.notifEmptyBody")}
         actionLabel={t("screens.backTraining")}
         onAction={() => router.back()}
-        secondaryLabel="Notification settings"
+        secondaryLabel={t("extra.notifSettings")}
         onSecondary={() => router.push("/settings")}
       />
     </Screen>

@@ -14,14 +14,14 @@ const PLANS = [
     name: "Pro Monthly",
     price: "€14.99",
     period: "/month",
-    perks: ["All creator programs", "Session player", "Progress tracking"],
+    perkKeys: ["perkAllPrograms", "perkPlayer", "perkProgress"],
   },
   {
     id: "yearly",
     name: "Pro Yearly",
     price: "€119",
     period: "/year",
-    perks: ["2 months free", "Priority support", "Exclusive camps"],
+    perkKeys: ["perkTwoMonths", "perkPriority", "perkExclusive"],
   },
 ];
 
@@ -37,8 +37,8 @@ export default function PaywallScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      <Text style={styles.hero}>Build your game</Text>
-      <Text style={styles.sub}>Unlock every program, session player, and progress tools.</Text>
+      <Text style={styles.hero}>{t("extra.paywallHero")}</Text>
+      <Text style={styles.sub}>{t("extra.paywallSub")}</Text>
 
       <View style={styles.plans}>
         {PLANS.map((p) => {
@@ -59,10 +59,10 @@ export default function PaywallScreen() {
                 {p.price}
                 <Text style={styles.period}>{p.period}</Text>
               </Text>
-              {p.perks.map((perk) => (
-                <View key={perk} style={styles.perk}>
+              {p.perkKeys.map((perkKey) => (
+                <View key={perkKey} style={styles.perk}>
                   <Check color={colors.accent} size={14} />
-                  <Text style={styles.perkText}>{perk}</Text>
+                  <Text style={styles.perkText}>{t(`extra.${perkKey}`)}</Text>
                 </View>
               ))}
             </Pressable>

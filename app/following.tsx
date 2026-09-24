@@ -56,7 +56,7 @@ export default function FollowingScreen() {
         <Text style={styles.title}>{t("creator.followingTitle")}</Text>
         <View style={{ width: 40 }} />
       </View>
-      <Text style={styles.sub}>Creators you follow — train with their programs anytime.</Text>
+      <Text style={styles.sub}>{t("extra.followingSub")}</Text>
 
       {loading || catalogLoading ? (
         <ActivityIndicator color={colors.accent} style={{ marginTop: 24 }} />

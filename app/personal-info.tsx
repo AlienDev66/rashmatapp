@@ -46,12 +46,12 @@ export default function PersonalInfoScreen() {
 
   const onPickPhoto = async () => {
     if (!user) {
-      Alert.alert("Sign in required", "Sign in to update your photo.");
+      Alert.alert(t("common.signInRequired"), t("extra.signInToUpdatePhoto"));
       return;
     }
     const { error, uri, mimeType } = await pickProfileImage();
     if (error) {
-      Alert.alert("Permission", error);
+      Alert.alert(t("extra.permission"), error);
       return;
     }
     if (!uri) return;
@@ -61,18 +61,14 @@ export default function PersonalInfoScreen() {
     const { error: upError, url } = await uploadAvatar(user.id, uri, mimeType);
     if (upError || !url) {
       setBusy(false);
-      Alert.alert(
-        "Upload failed",
-        upError ??
-          "Could not upload. Make sure you ran the Storage migration (avatars bucket).",
-      );
+      Alert.alert(t("extra.uploadFailed"), upError ?? t("extra.uploadFailedBody"));
       setAvatarUri(profile?.avatar_url ?? null);
       return;
     }
     const { error: saveError } = await updateProfile({ avatar_url: url });
     setBusy(false);
     if (saveError) {
-      Alert.alert("Could not save photo", saveError);
+      Alert.alert(t("extra.couldNotSavePhoto"), saveError);
       return;
     }
     await refreshProfile();
@@ -89,12 +85,12 @@ export default function PersonalInfoScreen() {
     });
     setBusy(false);
     if (error) {
-      Alert.alert("Could not save", error);
+      Alert.alert(t("extra.couldNotSave"), error);
       return;
     }
     await refreshProfile();
-    Alert.alert("Saved", "Your profile was updated.", [
-      { text: "OK", onPress: () => router.back() },
+    Alert.alert(t("extra.profileSaved"), t("extra.profileSavedBody"), [
+      { text: t("common.ok"), onPress: () => router.back() },
     ]);
   };
 
@@ -123,7 +119,7 @@ export default function PersonalInfoScreen() {
                 <Camera color={colors.black} size={14} />
               </View>
             </View>
-            <Text style={styles.photoHint}>{busy ? "Updating…" : "Change photo"}</Text>
+            <Text style={styles.photoHint}>{busy ? t("extra.updatingPhoto") : t("extra.changePhoto")}</Text>
           </Pressable>
 
           <View style={styles.form}>
@@ -141,7 +137,7 @@ export default function PersonalInfoScreen() {
 
           <View style={{ marginTop: "auto", paddingTop: 24 }}>
             <Button
-              label={busy ? "Saving…" : "Save changes"}
+              label={busy ? t("extra.saving") : t("extra.saveChanges")}
               variant="accent"
               disabled={busy}
               onPress={onSave}

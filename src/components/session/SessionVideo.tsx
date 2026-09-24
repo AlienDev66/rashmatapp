@@ -98,7 +98,7 @@ export function SessionVideo({
   useEventListener(player, "statusChange", ({ status: s, error }) => {
     if (s === "error") {
       setStatus("error");
-      setErrorMsg(error?.message ?? "Playback error");
+      setErrorMsg(error?.message ?? t("extra.playbackError"));
     } else if (s === "readyToPlay") {
       setStatus("ready");
       if (playing) player.play();

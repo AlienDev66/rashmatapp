@@ -95,7 +95,7 @@ export default function SignUpScreen() {
           onChangeText={setConfirm}
           leftIcon={<PasswordIcon size={20} color={colors.white} />}
         />
-        <Button label="Go  →" loading={busy} disabled={busy} onPress={onSignUp} />
+        <Button label={t("auth.go")} loading={busy} disabled={busy} onPress={onSignUp} />
       </View>
 
       <Text style={styles.footer}>

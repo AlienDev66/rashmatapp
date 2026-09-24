@@ -25,13 +25,13 @@ export default function ResetPasswordScreen() {
       return;
     }
     if (password !== confirm) {
-      Alert.alert("Passwords don’t match", "Confirm your new password.");
+      Alert.alert(t("authExtra.passwordsMismatch"), t("authExtra.confirmYourPassword"));
       return;
     }
     if (!session) {
       Alert.alert(
-        "Open the email link",
-        "Tap the reset link from your email on this device, then set a new password.",
+        t("authExtra.openEmailLink"),
+        t("authExtra.openEmailLinkBody"),
       );
       return;
     }
@@ -39,11 +39,11 @@ export default function ResetPasswordScreen() {
     const { error } = await updatePassword(password);
     setBusy(false);
     if (error) {
-      Alert.alert("Update failed", error);
+      Alert.alert(t("authExtra.updateFailed"), error);
       return;
     }
-    Alert.alert("Password updated", "Sign in with your new password.", [
-      { text: "OK", onPress: () => router.replace("/(auth)/sign-in") },
+    Alert.alert(t("authExtra.passwordUpdated"), t("authExtra.passwordUpdatedBody"), [
+      { text: t("common.ok"), onPress: () => router.replace("/(auth)/sign-in") },
     ]);
   };
 
@@ -53,7 +53,7 @@ export default function ResetPasswordScreen() {
     >
       <BackButton />
       <Text style={styles.title}>{t("authExtra.resetTitle")}</Text>
-      <Text style={styles.sub}>Use at least 8 characters. Then sign in with your new password.</Text>
+      <Text style={styles.sub}>{t("extra.resetSubHint")}</Text>
 
       <View style={styles.form}>
         <TextField

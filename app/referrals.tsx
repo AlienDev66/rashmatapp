@@ -27,7 +27,7 @@ export default function ReferralsScreen() {
   const onCopy = async () => {
     if (!code) return;
     await Clipboard.setStringAsync(code);
-    Alert.alert("Copied", "Invite code copied.");
+    Alert.alert(t("extra.copied"), t("extra.copiedBody"));
   };
 
   const onApply = async () => {
@@ -36,10 +36,10 @@ export default function ReferralsScreen() {
     const res = await applyReferralCode(input);
     setBusy(false);
     if (!res.ok) {
-      Alert.alert("Could not apply", res.error ?? "Try another code.");
+      Alert.alert(t("extra.couldNotApply"), res.error ?? t("extra.tryAnotherCode"));
       return;
     }
-    Alert.alert("You're linked", "When you finish your first session, your partner earns a medal.");
+    Alert.alert(t("extra.linkedTitle"), t("extra.linkedBody"));
     setInput("");
   };
 
@@ -52,18 +52,20 @@ export default function ReferralsScreen() {
       </View>
 
       <Text style={styles.hero}>{t("screens.invitePartner")}</Text>
-      <Text style={styles.sub}>
-        Share your code. When they complete their first session, you unlock the Training Partner
-        medal (+XP).
-      </Text>
+      <Text style={styles.sub}>{t("extra.referralsSub")}</Text>
 
       <View style={styles.card}>
         <Text style={styles.label}>{t("screens.yourCode")}</Text>
         <Text style={styles.code}>{code ?? "…"}</Text>
         <View style={styles.row}>
-          <Button label="Copy" variant="soft" onPress={() => void onCopy()} style={{ flex: 1 }} />
           <Button
-            label="Share  →"
+            label={t("screens.copy")}
+            variant="soft"
+            onPress={() => void onCopy()}
+            style={{ flex: 1 }}
+          />
+          <Button
+            label={t("screens.shareArrow")}
             variant="accent"
             onPress={() => code && void shareReferralInvite(code)}
             style={{ flex: 1 }}
@@ -74,13 +76,13 @@ export default function ReferralsScreen() {
 
       <Text style={styles.section}>{t("screens.haveCode")}</Text>
       <TextField
-        placeholder="Enter invite code"
+        placeholder={t("screens.enterInvite")}
         autoCapitalize="characters"
         value={input}
         onChangeText={setInput}
       />
       <Button
-        label={busy ? "Applying…" : "Apply code"}
+        label={busy ? t("extra.applying") : t("extra.applyCode")}
         variant="soft"
         style={{ marginTop: 12 }}
         disabled={busy || !input.trim()}

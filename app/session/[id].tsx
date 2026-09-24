@@ -102,7 +102,11 @@ export default function SessionPlayerScreen() {
       if (!isLastSet) {
         return {
           title: exercise?.name ?? t("session.drill"),
-          meta: `${isRounds ? "Round" : "Set"} ${setIndex + 2} of ${totalSets}`,
+          meta: t("extra.setOf", {
+            unit: isRounds ? t("extra.round") : t("extra.set"),
+            current: setIndex + 2,
+            total: totalSets,
+          }),
         };
       }
       if (nextExercise) {
@@ -133,14 +137,15 @@ export default function SessionPlayerScreen() {
     nextExercise,
     scheme,
     targetReps,
+    t,
   ]);
 
   const primaryLabel = useMemo(() => {
-    if (phase === "rest") return "Start next";
-    if (isLastSet && isLastExercise) return "Finish session";
-    if (isLastSet) return "Complete drill";
-    return "Complete set";
-  }, [phase, isLastSet, isLastExercise]);
+    if (phase === "rest") return t("extra.startNext");
+    if (isLastSet && isLastExercise) return t("session.finishSession");
+    if (isLastSet) return t("extra.completeDrill");
+    return t("extra.completeSet");
+  }, [phase, isLastSet, isLastExercise, t]);
 
   useEffect(() => {
     setExerciseIndex(0);
@@ -356,8 +361,8 @@ export default function SessionPlayerScreen() {
         empty={!session || !exercise}
         emptyTone="training"
         emptyTitle={t("session.notFound")}
-        emptyMessage="This drill isn’t available. Go back and pick another day."
-        emptyActionLabel="Back"
+        emptyMessage={t("extra.drillNotFound")}
+        emptyActionLabel={t("common.back")}
         emptyOnAction={() => router.back()}
         onRetry={reload}
       >
@@ -458,7 +463,11 @@ export default function SessionPlayerScreen() {
                     ))}
                   </View>
                   <Text style={styles.setCaption}>
-                    {isRounds ? "Round" : "Set"} {setIndex + 1} of {totalSets}
+                    {t("extra.setOf", {
+                      unit: isRounds ? t("extra.round") : t("extra.set"),
+                      current: setIndex + 1,
+                      total: totalSets,
+                    })}
                     {"  ·  "}
                     <Text style={{ color: colors.accent }}>
                       {formatRepsLabel(targetReps, exercise.reps)}
@@ -526,7 +535,7 @@ export default function SessionPlayerScreen() {
                 </View>
               ) : (
                 <View style={styles.dockTools}>
-                  <Text style={styles.restHint}>Breathe · shake out · stay ready</Text>
+                  <Text style={styles.restHint}>{t("extra.restHint")}</Text>
                 </View>
               )}
 
@@ -561,7 +570,7 @@ export default function SessionPlayerScreen() {
             <Modal visible={showList} transparent animationType="slide" onRequestClose={() => setShowList(false)}>
               <Pressable style={styles.modalBackdrop} onPress={() => setShowList(false)} />
               <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
-                <Text style={styles.sheetTitle}>Session drills</Text>
+                <Text style={styles.sheetTitle}>{t("extra.sessionDrills")}</Text>
                 <ScrollView>
                   {session.exercises.map((ex, i) => (
                     <Pressable
