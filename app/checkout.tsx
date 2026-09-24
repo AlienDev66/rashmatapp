@@ -8,8 +8,10 @@ import { colors, fonts, radii, spacing } from "@/src/theme";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Alert, StyleSheet, Text, View } from "react-native";
+import { useT } from "@/src/i18n";
 
 export default function CheckoutScreen() {
+  const t = useT();
   const { plan, programId } = useLocalSearchParams<{ plan?: string; programId?: string }>();
   const { user, updateProfile, refreshProfile } = useAuth();
   const [busy, setBusy] = useState(false);
@@ -67,17 +69,17 @@ export default function CheckoutScreen() {
     <Screen>
       <View style={styles.top}>
         <BackButton />
-        <Text style={styles.title}>Checkout</Text>
+        <Text style={styles.title}>{t("screens.checkout")}</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <View style={styles.summary}>
-        <Text style={styles.summaryLabel}>Selected</Text>
+        <Text style={styles.summaryLabel}>{t("screens.selected")}</Text>
         <Text style={styles.summaryValue}>{label}</Text>
         <Text style={styles.note}>Demo checkout — no real charge. Unlocks access for testing.</Text>
       </View>
 
-      <Text style={styles.section}>Payment details (demo)</Text>
+      <Text style={styles.section}>{t("screens.paymentDemo")}</Text>
       <View style={styles.form}>
         <TextField placeholder="Cardholder name" />
         <TextField placeholder="Card number" keyboardType="number-pad" />

@@ -8,8 +8,10 @@ import { router } from "expo-router";
 import { Search as SearchIcon } from "lucide-react-native";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { useT } from "@/src/i18n";
 
 export default function SearchScreen() {
+  const t = useT();
   const [query, setQuery] = useState("");
   const { creators, programs, loading, error, refresh, online } = useCatalog();
 
@@ -33,7 +35,7 @@ export default function SearchScreen() {
     <Screen>
       <View style={styles.top}>
         <BackButton />
-        <Text style={styles.title}>Search</Text>
+        <Text style={styles.title}>{t("searchScreen.title")}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -42,7 +44,7 @@ export default function SearchScreen() {
         <TextInput
           value={query}
           onChangeText={setQuery}
-          placeholder="Programs, creators, sports…"
+          placeholder={t("searchScreen.placeholder")}
           placeholderTextColor={colors.textDim}
           style={styles.input}
           autoCapitalize="none"
@@ -55,9 +57,9 @@ export default function SearchScreen() {
         error={error}
         empty={programs.length === 0 && creators.length === 0}
         emptyTone="search"
-        emptyTitle="Nothing to search"
-        emptyMessage="The catalog is empty. Pull to refresh or browse later."
-        emptyActionLabel="Refresh"
+        emptyTitle={t("searchScreen.nothingToSearch")}
+        emptyMessage={t("searchScreen.nothingToSearchBody")}
+        emptyActionLabel={t("common.refresh")}
         emptyOnAction={refresh}
         onRetry={refresh}
         offline={!online}
@@ -65,16 +67,16 @@ export default function SearchScreen() {
         {empty ? (
           <EmptyState
             tone="search"
-            title="No matches"
-            message="Try another keyword, or browse creators and programs."
-            actionLabel="Browse creators  →"
+            title={t("searchScreen.noMatches")}
+            message={t("searchScreen.noMatchesBody")}
+            actionLabel={t("searchScreen.browseCreators")}
             onAction={() => router.push("/(tabs)/creators")}
-            secondaryLabel="Browse programs"
+            secondaryLabel={t("searchScreen.browsePrograms")}
             onSecondary={() => router.push("/(tabs)/programs")}
           />
         ) : (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 18 }}>
-            <Section title="Programs">
+            <Section title={t("searchScreen.programs")}>
               {results.programs.map((p) => (
                 <Pressable
                   key={p.id}
@@ -83,12 +85,12 @@ export default function SearchScreen() {
                 >
                   <Text style={styles.rowTitle}>{p.title}</Text>
                   <Text style={styles.rowMeta}>
-                    {p.weeks} weeks · {p.level}
+                    {t("searchScreen.programMeta", { weeks: p.weeks, level: p.level })}
                   </Text>
                 </Pressable>
               ))}
             </Section>
-            <Section title="Creators">
+            <Section title={t("searchScreen.creators")}>
               {results.creators.map((c) => (
                 <Pressable
                   key={c.id}

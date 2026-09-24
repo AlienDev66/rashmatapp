@@ -29,6 +29,7 @@ import DraggableFlatList, {
   type RenderItemParams,
 } from "react-native-draggable-flatlist";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useT } from "@/src/i18n";
 
 type DayItem = {
   id: string;
@@ -39,6 +40,7 @@ type DayItem = {
 };
 
 export default function ProgramDetailScreen() {
+  const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
   const { programs, sessions, loading, error, refresh, online } = useCatalog();
@@ -103,7 +105,7 @@ export default function ProgramDetailScreen() {
   const onEnroll = async () => {
     if (!program) return;
     if (!user) {
-      Alert.alert("Sign in required", "Create an account to join this program.");
+      Alert.alert(t("common.signInRequired"), t("programDetail.joinBody"));
       router.push("/(auth)/sign-in");
       return;
     }
@@ -122,7 +124,10 @@ export default function ProgramDetailScreen() {
         router.replace("/(tabs)");
       }
     } catch (e) {
-      Alert.alert("Could not start", e instanceof Error ? e.message : "Try again");
+      Alert.alert(
+        t("home.couldNotStart"),
+        e instanceof Error ? e.message : t("home.tryAgain"),
+      );
     } finally {
       setEnrolling(false);
     }
@@ -179,7 +184,11 @@ export default function ProgramDetailScreen() {
               <Text style={styles.dayTitle}>{item.title}</Text>
               <View style={styles.dayMeta}>
                 <Text style={styles.dayMetaText}>
-                  {done ? "Done" : isNext ? "Up next" : item.meta}
+                  {done
+                    ? t("programDetail.done")
+                    : isNext
+                      ? t("programDetail.upNext")
+                      : item.meta}
                 </Text>
               </View>
             </View>
@@ -190,7 +199,7 @@ export default function ProgramDetailScreen() {
         </ScaleDecorator>
       );
     },
-    [completed, nextWorkoutId],
+    [completed, nextWorkoutId, t],
   );
 
   const hero = program ? (
@@ -223,7 +232,7 @@ export default function ProgramDetailScreen() {
               <Text style={styles.ringNum}>
                 {doneCount}/{totalTrainDays}
               </Text>
-              <Text style={styles.ringLabel}>Days</Text>
+              <Text style={styles.ringLabel}>{t("programDetail.days")}</Text>
             </View>
           </View>
         ) : null}
@@ -237,13 +246,17 @@ export default function ProgramDetailScreen() {
           style={[styles.tab, tab === "overview" && styles.tabOn]}
           onPress={() => setTab("overview")}
         >
-          <Text style={[styles.tabText, tab === "overview" && styles.tabTextOn]}>Overview</Text>
+          <Text style={[styles.tabText, tab === "overview" && styles.tabTextOn]}>
+            {t("programDetail.overviewTab")}
+          </Text>
         </Pressable>
         <Pressable
           style={[styles.tab, tab === "program" && styles.tabOn]}
           onPress={() => setTab("program")}
         >
-          <Text style={[styles.tabText, tab === "program" && styles.tabTextOn]}>Program</Text>
+          <Text style={[styles.tabText, tab === "program" && styles.tabTextOn]}>
+            {t("programDetail.programTab")}
+          </Text>
         </Pressable>
       </View>
     </>
@@ -256,9 +269,9 @@ export default function ProgramDetailScreen() {
         error={error}
         empty={!program}
         emptyTone="missing"
-        emptyTitle="Program not found"
-        emptyMessage="This camp may have been unpublished or removed."
-        emptyActionLabel="Browse programs  →"
+        emptyTitle={t("programDetail.notFound")}
+        emptyMessage={t("programDetail.notFoundBody")}
+        emptyActionLabel={t("programDetail.browsePrograms")}
         emptyOnAction={() => router.replace("/(tabs)/programs")}
         onRetry={refresh}
         offline={!online}
@@ -272,42 +285,54 @@ export default function ProgramDetailScreen() {
             >
               {hero}
               <View style={styles.body}>
-                <Text style={styles.section}>PROGRAM HIGHLIGHTS</Text>
+                <Text style={styles.section}>{t("programDetail.highlights")}</Text>
                 <View style={styles.highlights}>
                   <View style={styles.hl}>
                     <Calendar color={colors.white} size={16} />
-                    <Text style={styles.hlText}>{program.daysPerWeek} Days Per Week</Text>
+                    <Text style={styles.hlText}>
+                      {t("programDetail.daysPerWeek", { n: program.daysPerWeek })}
+                    </Text>
                   </View>
                   <View style={styles.hl}>
                     <Clock color={colors.white} size={16} />
-                    <Text style={styles.hlText}>{program.minutes} Min Session</Text>
+                    <Text style={styles.hlText}>
+                      {t("programDetail.minSession", { n: program.minutes })}
+                    </Text>
                   </View>
                 </View>
-                <Text style={styles.section}>PROGRAM OVERVIEW</Text>
+                <Text style={styles.section}>{t("programDetail.overviewSection")}</Text>
                 <Text style={styles.copy}>{program.description}</Text>
                 {enrollment ? (
                   <>
                     <Text style={styles.progressNote}>
-                      Progress {enrollment.progressPct}% · Day {enrollment.currentDay}
+                      {t("programDetail.progressNote", {
+                        pct: enrollment.progressPct,
+                        day: enrollment.currentDay,
+                      })}
                     </Text>
                     <Pressable onPress={() => router.push(`/progress/${program.id}`)}>
-                      <Text style={styles.progressLink}>View full progress ›</Text>
+                      <Text style={styles.progressLink}>
+                        {t("programDetail.viewFullProgress")}
+                      </Text>
                     </Pressable>
                     {nextWorkoutId ? (
                       <Pressable
                         style={styles.nextHint}
                         onPress={() => router.push(`/workout/${nextWorkoutId}`)}
                       >
-                        <Text style={styles.nextHintLabel}>NEXT SESSION</Text>
+                        <Text style={styles.nextHintLabel}>
+                          {t("programDetail.nextSession")}
+                        </Text>
                         <Text style={styles.nextHintTitle}>
-                          {days.find((d) => d.id === nextWorkoutId)?.title ?? "Continue"}
+                          {days.find((d) => d.id === nextWorkoutId)?.title ??
+                            t("programDetail.continueLabel")}
                         </Text>
                       </Pressable>
                     ) : null}
                   </>
                 ) : null}
                 <Text style={styles.reorderHint}>
-                  Open the Program tab and long-press a day to reorder your schedule.
+                  {t("programDetail.reorderHintOverview")}
                 </Text>
                 {enrolled ? (
                   <View style={styles.sideActions}>
@@ -315,22 +340,25 @@ export default function ProgramDetailScreen() {
                       style={styles.sideBtn}
                       onPress={() => router.push("/workout-logs")}
                     >
-                      <Text style={styles.sideBtnText}>Workout logs</Text>
+                      <Text style={styles.sideBtnText}>
+                        {t("programDetail.workoutLogs")}
+                      </Text>
                     </Pressable>
                     <Pressable
                       style={styles.sideBtn}
                       onPress={() => {
                         Alert.alert(
-                          "Restart camp?",
-                          "Clears your completions for this program and resets to day 1.",
+                          t("programDetail.restartTitle"),
+                          t("programDetail.restartBody"),
                           [
-                            { text: "Cancel", style: "cancel" },
+                            { text: t("common.cancel"), style: "cancel" },
                             {
-                              text: "Restart",
+                              text: t("programDetail.restart"),
                               style: "destructive",
                               onPress: () => {
                                 void restartProgram(program.id).then(async ({ error }) => {
-                                  if (error) Alert.alert("Could not restart", error);
+                                  if (error)
+                                    Alert.alert(t("programDetail.couldNotRestart"), error);
                                   else {
                                     await reloadProgress();
                                     void Haptics.notificationAsync(
@@ -345,7 +373,7 @@ export default function ProgramDetailScreen() {
                       }}
                     >
                       <RotateCcw color={colors.textMuted} size={14} />
-                      <Text style={styles.sideBtnText}>Restart</Text>
+                      <Text style={styles.sideBtnText}>{t("programDetail.restart")}</Text>
                     </Pressable>
                     <Pressable
                       style={styles.sideBtn}
@@ -355,7 +383,7 @@ export default function ProgramDetailScreen() {
                         })
                       }
                     >
-                      <Text style={styles.sideBtnText}>Camp ranks</Text>
+                      <Text style={styles.sideBtnText}>{t("programDetail.campRanks")}</Text>
                     </Pressable>
                   </View>
                 ) : null}
@@ -374,7 +402,7 @@ export default function ProgramDetailScreen() {
                   {hero}
                   <View style={styles.bodyHeader}>
                     <View style={styles.previewHead}>
-                      <Text style={styles.section}>PROGRAM PREVIEW</Text>
+                      <Text style={styles.section}>{t("programDetail.previewSection")}</Text>
                       <Pressable
                         onPress={() => {
                           if (!program) return;
@@ -388,11 +416,11 @@ export default function ProgramDetailScreen() {
                           });
                         }}
                       >
-                        <Text style={styles.resetOrder}>Reset order</Text>
+                        <Text style={styles.resetOrder}>{t("programDetail.resetOrder")}</Text>
                       </Pressable>
                     </View>
                     <Text style={styles.reorderHint}>
-                      Long-press a day (or the grip) and drag up or down.
+                      {t("programDetail.reorderHintPreview")}
                     </Text>
                   </View>
                 </>
@@ -401,8 +429,8 @@ export default function ProgramDetailScreen() {
                 <EmptyState
                   compact
                   tone="training"
-                  title="No days yet"
-                  message="This program doesn’t have sessions published."
+                  title={t("programDetail.noDays")}
+                  message={t("programDetail.noDaysBody")}
                 />
               }
               ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
@@ -416,14 +444,20 @@ export default function ProgramDetailScreen() {
           <Button
             label={
               enrolling
-                ? "Starting…"
+                ? t("programDetail.starting")
                 : enrolled
                   ? nextWorkoutId
-                    ? `Start ${days.find((d) => d.id === nextWorkoutId)?.title?.split("·")[0]?.trim() ?? "next day"}  →`
-                    : "Continue training  →"
+                    ? t("programDetail.startDay", {
+                        day:
+                          days
+                            .find((d) => d.id === nextWorkoutId)
+                            ?.title?.split("·")[0]
+                            ?.trim() ?? t("programDetail.nextDay"),
+                      })
+                    : t("programDetail.continueTraining")
                   : program.isPremium
-                    ? "Unlock this camp  →"
-                    : "Start this camp  →"
+                    ? t("programDetail.unlockCamp")
+                    : t("programDetail.startCamp")
             }
             variant="accent"
             disabled={enrolling}

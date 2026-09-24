@@ -20,6 +20,7 @@ import { colors, fonts, radii, spacing } from "@/src/theme";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
+import { useT } from "@/src/i18n";
   Alert,
   Pressable,
   ScrollView,
@@ -32,6 +33,7 @@ import {
  * Full Studio CMS — best on web; usable on mobile for drill editing.
  */
 export default function StudioCmsScreen() {
+  const t = useT();
   const { programId: paramProgramId, sessionId: paramSessionId } = useLocalSearchParams<{
     programId?: string;
     sessionId?: string;
@@ -108,8 +110,8 @@ export default function StudioCmsScreen() {
     return (
       <Screen>
         <BackButton />
-        <Text style={styles.sub}>Activate creator mode in Minimal Studio first.</Text>
-        <Button label="Go to Studio" variant="accent" onPress={() => router.replace("/studio")} />
+        <Text style={styles.sub}>{t("studioScreens.activateFirst")}</Text>
+        <Button label={t("studioScreens.goToStudio")} variant="accent" onPress={() => router.replace("/studio")} />
       </Screen>
     );
   }
@@ -122,7 +124,7 @@ export default function StudioCmsScreen() {
       mux_playback_id: muxId.trim() || null,
     });
     setBusy(false);
-    if (error) Alert.alert("Save failed", error);
+    if (error) Alert.alert(t("studioScreens.saveFailed"), error);
     else {
       setSessions((prev) =>
         prev.map((s) =>
@@ -131,7 +133,7 @@ export default function StudioCmsScreen() {
             : s,
         ),
       );
-      Alert.alert("Saved", "Session updated.");
+      Alert.alert(t("studioScreens.saved"), t("studioScreens.sessionUpdated"));
     }
   };
 
@@ -140,11 +142,11 @@ export default function StudioCmsScreen() {
     const day = sessions.length + 1;
     const { error, session } = await createSession({
       programId,
-      title: `Day ${day}`,
+      title: t("common.day", { n: day }),
       day,
     });
     if (error || !session) {
-      Alert.alert("Error", error ?? "");
+      Alert.alert(t("common.error"), error ?? "");
       return;
     }
     setSessions((p) => [...p, session]);
@@ -153,7 +155,7 @@ export default function StudioCmsScreen() {
 
   const onAddDrill = async () => {
     if (!sessionId || !drillName.trim()) {
-      Alert.alert("Name required", "Enter a drill name.");
+      Alert.alert(t("studioScreens.nameRequired"), t("studioScreens.nameRequiredBody"));
       return;
     }
     setBusy(true);
@@ -166,7 +168,7 @@ export default function StudioCmsScreen() {
     });
     setBusy(false);
     if (error || !exercise) {
-      Alert.alert("Could not add drill", error ?? "");
+      Alert.alert(t("studioScreens.couldNotAddDrill"), error ?? "");
       return;
     }
     setExercises((p) => [...p, exercise]);
@@ -175,14 +177,14 @@ export default function StudioCmsScreen() {
   };
 
   const onDeleteDrill = (id: string) => {
-    Alert.alert("Delete drill?", "This cannot be undone.", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("studioScreens.deleteDrill"), t("studioScreens.deleteDrillBody"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Delete",
+        text: t("studioScreens.deleteLabel"),
         style: "destructive",
         onPress: () => {
           void deleteExercise(id).then(({ error }) => {
-            if (error) Alert.alert("Error", error);
+            if (error) Alert.alert(t("common.error"), error);
             else setExercises((p) => p.filter((e) => e.id !== id));
           });
         },
@@ -194,25 +196,23 @@ export default function StudioCmsScreen() {
     <Screen>
       <View style={styles.top}>
         <BackButton />
-        <Text style={styles.title}>Studio CMS</Text>
+        <Text style={styles.title}>{t("studioScreens.cmsTitle")}</Text>
         <View style={{ width: 40 }} />
       </View>
-      <Text style={styles.sub}>
-        Full editor for programs, sessions, and drills. Paste Mux playback IDs or video URLs.
-      </Text>
+      <Text style={styles.sub}>{t("studioScreens.cmsSub")}</Text>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 48 }}>
         {programs.length === 0 ? (
           <EmptyState
             tone="studio"
-            title="No programs to edit"
-            message="Create a program in Studio first, then come back to add sessions and drills."
-            actionLabel="New program  →"
+            title={t("studioScreens.noProgramsToEdit")}
+            message={t("studioScreens.noProgramsToEditBody")}
+            actionLabel={t("studioScreens.newProgramCta")}
             onAction={() => router.push("/studio/new")}
           />
         ) : (
           <>
-        <Text style={styles.label}>Program</Text>
+        <Text style={styles.label}>{t("studioScreens.program")}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
           {programs.map((p) => (
             <Pressable
@@ -231,18 +231,18 @@ export default function StudioCmsScreen() {
         </ScrollView>
 
         <View style={styles.rowBetween}>
-          <Text style={styles.label}>Sessions</Text>
+          <Text style={styles.label}>{t("studioScreens.sessions")}</Text>
           <Pressable onPress={() => void onAddSession()}>
-            <Text style={styles.link}>+ Session</Text>
+            <Text style={styles.link}>{t("studioScreens.addSessionLink")}</Text>
           </Pressable>
         </View>
         {sessions.length === 0 ? (
           <EmptyState
             compact
             tone="studio"
-            title="No sessions"
-            message="Add Day 1, then edit drills and Mux IDs."
-            actionLabel="Add session  →"
+            title={t("studioScreens.noSessions")}
+            message={t("studioScreens.noSessionsBody")}
+            actionLabel={t("studioScreens.addSessionCta")}
             onAction={() => void onAddSession()}
           />
         ) : (
@@ -254,7 +254,7 @@ export default function StudioCmsScreen() {
                 style={[styles.chip, sessionId === s.id && styles.chipOn]}
               >
                 <Text style={[styles.chipText, sessionId === s.id && styles.chipTextOn]}>
-                  D{s.day}
+                  {t("studioScreens.dayChip", { n: s.day })}
                 </Text>
               </Pressable>
             ))}
@@ -263,27 +263,33 @@ export default function StudioCmsScreen() {
 
         {sessionId ? (
           <View style={styles.panel}>
-            <TextField value={sessionTitle} onChangeText={setSessionTitle} placeholder="Session title" />
+            <TextField
+              value={sessionTitle}
+              onChangeText={setSessionTitle}
+              placeholder={t("studioScreens.sessionTitlePlaceholder")}
+            />
             <TextField
               value={muxId}
               onChangeText={setMuxId}
-              placeholder="Session Mux playback ID (optional)"
+              placeholder={t("studioScreens.sessionMuxPlaceholder")}
               autoCapitalize="none"
             />
             <Button
-              label={busy ? "…" : "Save session"}
+              label={busy ? "…" : t("studioScreens.saveSession")}
               variant="surface"
               disabled={busy}
               onPress={() => void onSaveSession()}
             />
 
-            <Text style={[styles.label, { marginTop: 18 }]}>Drills</Text>
+            <Text style={[styles.label, { marginTop: 18 }]}>
+              {t("studioScreens.drills")}
+            </Text>
             {exercises.length === 0 ? (
               <EmptyState
                 compact
                 tone="studio"
-                title="No drills yet"
-                message="Add the first drill for this session."
+                title={t("studioScreens.noDrills")}
+                message={t("studioScreens.noDrillsBody")}
               />
             ) : (
               exercises.map((ex) => (
@@ -293,22 +299,30 @@ export default function StudioCmsScreen() {
                     <Text style={styles.meta}>{ex.reps}</Text>
                   </View>
                   <Pressable onPress={() => onDeleteDrill(ex.id)}>
-                    <Text style={styles.delete}>Delete</Text>
+                    <Text style={styles.delete}>{t("commonExtra.delete")}</Text>
                   </Pressable>
                 </View>
               ))
             )}
 
-            <TextField value={drillName} onChangeText={setDrillName} placeholder="New drill name" />
-            <TextField value={drillReps} onChangeText={setDrillReps} placeholder="Reps: 8 8 8" />
+            <TextField
+              value={drillName}
+              onChangeText={setDrillName}
+              placeholder={t("studioScreens.newDrillPlaceholder")}
+            />
+            <TextField
+              value={drillReps}
+              onChangeText={setDrillReps}
+              placeholder={t("studioScreens.repsPlaceholder")}
+            />
             <TextField
               value={drillMux}
               onChangeText={setDrillMux}
-              placeholder="Drill Mux ID (optional)"
+              placeholder={t("studioScreens.drillMuxPlaceholder")}
               autoCapitalize="none"
             />
             <Button
-              label={busy ? "…" : "Add drill"}
+              label={busy ? "…" : t("studioScreens.addDrill")}
               variant="accent"
               disabled={busy}
               onPress={() => void onAddDrill()}
@@ -318,8 +332,8 @@ export default function StudioCmsScreen() {
           <EmptyState
             compact
             tone="studio"
-            title="Pick a session"
-            message="Select a day chip above, or create a new session."
+            title={t("studioScreens.pickSession")}
+            message={t("studioScreens.pickSessionBody")}
           />
         ) : null}
           </>
@@ -327,7 +341,7 @@ export default function StudioCmsScreen() {
 
         {programId ? (
           <Button
-            label="Back to program overview"
+            label={t("studioScreens.backToOverview")}
             variant="ghost"
             style={{ marginTop: 20 }}
             onPress={() => router.push(`/studio/${programId}`)}

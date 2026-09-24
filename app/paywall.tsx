@@ -6,6 +6,7 @@ import { router } from "expo-router";
 import { Check } from "lucide-react-native";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useT } from "@/src/i18n";
 
 const PLANS = [
   {
@@ -25,13 +26,14 @@ const PLANS = [
 ];
 
 export default function PaywallScreen() {
+  const t = useT();
   const [plan, setPlan] = useState("yearly");
 
   return (
     <Screen>
       <View style={styles.top}>
         <BackButton />
-        <Text style={styles.title}>Go Pro</Text>
+        <Text style={styles.title}>{t("paywall.goPro")}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -70,11 +72,11 @@ export default function PaywallScreen() {
 
       <View style={{ marginTop: "auto", gap: 12 }}>
         <Button
-          label="Continue to checkout  →"
+          label={t("paywall.continueCheckout")}
           variant="accent"
           onPress={() => router.push({ pathname: "/checkout", params: { plan } })}
         />
-        <Button label="Maybe later" variant="ghost" onPress={() => router.back()} />
+        <Button label={t("paywall.maybeLater")} variant="ghost" onPress={() => router.back()} />
       </View>
     </Screen>
   );

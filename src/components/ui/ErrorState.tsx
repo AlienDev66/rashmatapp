@@ -1,4 +1,5 @@
 import { Button } from "@/src/components/ui/Button";
+import { useT } from "@/src/i18n";
 import { colors, fonts, radii, spacing } from "@/src/theme";
 import { AlertTriangle, WifiOff } from "lucide-react-native";
 import { StyleSheet, Text, View } from "react-native";
@@ -12,12 +13,15 @@ type Props = {
 
 export function ErrorState({
   title,
-  message = "Check your connection and try again.",
+  message,
   offline = false,
   onRetry,
 }: Props) {
+  const t = useT();
   const Icon = offline ? WifiOff : AlertTriangle;
-  const heading = title ?? (offline ? "You’re offline" : "Something went wrong");
+  const heading =
+    title ?? (offline ? t("state.offlineTitle") : t("state.errorTitle"));
+  const body = message ?? t("state.errorMessage");
 
   return (
     <View style={styles.wrap}>
@@ -25,9 +29,14 @@ export function ErrorState({
         <Icon color={colors.accent} size={28} strokeWidth={2} />
       </View>
       <Text style={styles.title}>{heading}</Text>
-      <Text style={styles.message}>{message}</Text>
+      <Text style={styles.message}>{body}</Text>
       {onRetry ? (
-        <Button label="Try again" variant="accent" onPress={onRetry} style={styles.btn} />
+        <Button
+          label={t("state.retry")}
+          variant="accent"
+          onPress={onRetry}
+          style={styles.btn}
+        />
       ) : null}
     </View>
   );

@@ -7,8 +7,10 @@ import { colors, fonts, radii, spacing } from "@/src/theme";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useT } from "@/src/i18n";
 
 export default function MedalsScreen() {
+  const t = useT();
   const { user } = useAuth();
   const [tab, setTab] = useState<"milestones" | "veteran">("milestones");
   const [ownedMap, setOwnedMap] = useState<Map<string, string>>(new Map());
@@ -33,7 +35,7 @@ export default function MedalsScreen() {
     <Screen>
       <View style={styles.top}>
         <BackButton />
-        <Text style={styles.title}>Medals</Text>
+        <Text style={styles.title}>{t("screens.medals")}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -43,14 +45,16 @@ export default function MedalsScreen() {
           onPress={() => setTab("milestones")}
         >
           <Text style={[styles.tabText, tab === "milestones" && styles.tabTextOn]}>
-            Milestones
+            {t("medalsScreen.milestones")}
           </Text>
         </Pressable>
         <Pressable
           style={[styles.tab, tab === "veteran" && styles.tabOn]}
           onPress={() => setTab("veteran")}
         >
-          <Text style={[styles.tabText, tab === "veteran" && styles.tabTextOn]}>Veteran</Text>
+          <Text style={[styles.tabText, tab === "veteran" && styles.tabTextOn]}>
+            {t("medalsScreen.veteran")}
+          </Text>
         </Pressable>
       </View>
 
@@ -67,7 +71,9 @@ export default function MedalsScreen() {
                 {m.title}
               </Text>
               <View style={styles.xpPill}>
-                <Text style={styles.xpText}>{m.xpReward} XP</Text>
+                <Text style={styles.xpText}>
+                  {t("medalsScreen.xpValue", { n: m.xpReward })}
+                </Text>
               </View>
               <Text style={styles.status}>
                 {unlocked
@@ -76,7 +82,7 @@ export default function MedalsScreen() {
                       day: "numeric",
                       year: "numeric",
                     })
-                  : "Not Achieved"}
+                  : t("medalsScreen.notAchieved")}
               </Text>
             </View>
           );

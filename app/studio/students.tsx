@@ -6,8 +6,10 @@ import { colors, fonts, radii } from "@/src/theme";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useT } from "@/src/i18n";
 
 export default function StudioStudentsScreen() {
+  const t = useT();
   const [rows, setRows] = useState<StudentProgressRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,18 +36,18 @@ export default function StudioStudentsScreen() {
     <Screen>
       <View style={styles.top}>
         <BackButton />
-        <Text style={styles.title}>Students</Text>
+        <Text style={styles.title}>{t("studioScreens.studentsTitle")}</Text>
         <View style={{ width: 40 }} />
       </View>
-      <Text style={styles.sub}>Progress across all your published and draft programs.</Text>
+      <Text style={styles.sub}>{t("studioScreens.studentsSub")}</Text>
       {loading ? <ActivityIndicator color={colors.accent} /> : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {!loading && !error && rows.length === 0 ? (
         <EmptyState
           tone="studio"
-          title="No students yet"
-          message="Publish a program and share the link — enrollments will show up here."
-          actionLabel="My programs  →"
+          title={t("studioScreens.noStudentsPublished")}
+          message={t("studioScreens.noStudentsPublishedBody")}
+          actionLabel={t("studioScreens.myPrograms")}
           onAction={() => router.push("/studio")}
         />
       ) : (
@@ -56,9 +58,14 @@ export default function StudioStudentsScreen() {
                 <Text style={styles.name}>{s.student_name}</Text>
                 <Text style={styles.meta}>{s.program_title}</Text>
                 <Text style={styles.meta}>
-                  Day {s.current_day} · {s.sessions_done} sessions done
+                  {t("studioScreens.studentRowMeta", {
+                    day: s.current_day,
+                    n: s.sessions_done,
+                  })}
                   {s.last_completed_at
-                    ? ` · last ${new Date(s.last_completed_at).toLocaleDateString()}`
+                    ? ` · ${t("studioScreens.lastAt", {
+                        date: new Date(s.last_completed_at).toLocaleDateString(),
+                      })}`
                     : ""}
                 </Text>
               </View>

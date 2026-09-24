@@ -27,8 +27,10 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useT } from "@/src/i18n";
 
 export default function CreatorProfileScreen() {
+  const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
   const { creators, programs, loading, error, refresh, online } = useCatalog();
@@ -192,7 +194,7 @@ export default function CreatorProfileScreen() {
 
                 {firstProgram ? (
                   <Button
-                    label="Train  →"
+                    label={t("creator.train")}
                     variant="accent"
                     style={styles.trainBtn}
                     onPress={() => router.push(`/program/${firstProgram.id}`)}
@@ -217,7 +219,7 @@ export default function CreatorProfileScreen() {
               <EmptyState
                 compact
                 tone="programs"
-                title="No programs yet"
+                title={t("creator.noPrograms")}
                 message="This creator hasn’t published a camp. Check back soon."
               />
             ) : (

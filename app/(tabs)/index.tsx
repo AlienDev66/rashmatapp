@@ -7,6 +7,7 @@ import { Screen } from "@/src/components/ui/Screen";
 import { enrollProgram } from "@/src/data/progress";
 import { useCatalog } from "@/src/hooks/useCatalog";
 import { useProgress } from "@/src/hooks/useProgress";
+import { useT } from "@/src/i18n";
 import {
   buildProgramSchedule,
   daysForWeek,
@@ -34,6 +35,7 @@ import {
 const FLAGSHIP_ID = "mat-foundations";
 
 export default function HomeScreen() {
+  const t = useT();
   const { profile, user, refreshProfile } = useAuth();
   const {
     programs,
@@ -147,7 +149,7 @@ export default function HomeScreen() {
       return;
     }
     if (!user) {
-      Alert.alert("Sign in required", "Create an account to start this camp.");
+      Alert.alert(t("home.signInRequired"), t("home.signInBody"));
       router.push("/(auth)/sign-in");
       return;
     }
@@ -163,7 +165,7 @@ export default function HomeScreen() {
       if (first) router.replace(`/workout/${first.id}`);
       else router.replace(`/program/${flagship.id}`);
     } catch (e) {
-      Alert.alert("Could not start", e instanceof Error ? e.message : "Try again");
+      Alert.alert(t("home.couldNotStart"), e instanceof Error ? e.message : t("home.tryAgain"));
     } finally {
       setStartingFlagship(false);
     }
@@ -189,20 +191,20 @@ export default function HomeScreen() {
           error={error}
           empty={!enrolled || !activeProgram}
           emptyTone="training"
-          emptyTitle={flagship ? `Start ${flagship.title}` : "Pick your first camp"}
+          emptyTitle={flagship ? t("home.startCampTitle", { title: flagship.title }) : t("home.pickCamp")}
           emptyMessage={
             flagship
-              ? "Auto-enroll your flagship camp and jump straight into week one — week strip + next session show up here."
-              : "Browse creator programs, unlock one, and your week + next session show up here."
+              ? t("home.startFlagshipBody")
+              : t("home.browseBody")
           }
           emptyActionLabel={
-            flagship ? "Start this camp  →" : "Browse programs  →"
+            flagship ? t("home.startCampCta") : t("home.browseProgramsCta")
           }
           emptyOnAction={() => {
             if (flagship) void startFlagship();
             else router.push("/(tabs)/programs");
           }}
-          emptySecondaryLabel="Browse all programs"
+          emptySecondaryLabel={t("home.browseAllPrograms")}
           emptyOnSecondary={() => router.push("/(tabs)/programs")}
           onRetry={onRefresh}
           offline={!online}
@@ -230,11 +232,11 @@ export default function HomeScreen() {
 
               <View style={styles.accel}>
                 <View style={styles.accelTop}>
-                  <Text style={styles.accelTitle}>Accelerate your progress</Text>
-                  <Text style={styles.why}>Why 4?</Text>
+                  <Text style={styles.accelTitle}>{t("screens.accelerate")}</Text>
+                  <Text style={styles.why}>{t("screens.why4")}</Text>
                 </View>
                 <Text style={styles.accelSub}>
-                  {weeklyDone}/4 sessions this week. Keep drilling.
+                  {t("screens.sessionsThisWeek", { done: weeklyDone })}
                 </Text>
                 <View style={styles.segments}>
                   {[0, 1, 2, 3].map((i) => (

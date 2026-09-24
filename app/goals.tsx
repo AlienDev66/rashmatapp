@@ -5,18 +5,20 @@ import { colors, fonts, radii } from "@/src/theme";
 import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useT } from "@/src/i18n";
 
-const GOALS = [
-  "Guard retention",
-  "Passing pressure",
-  "Competition prep",
-  "Improve BJJ / No-Gi",
-  "Takedowns & wrestling",
-  "Striking rounds",
-];
+const GOAL_IDS = [
+  "guardRetention",
+  "passingPressure",
+  "compPrep",
+  "improveBjj",
+  "takedowns",
+  "striking",
+] as const;
 
 export default function GoalsScreen() {
-  const [selected, setSelected] = useState<string[]>(["Improve BJJ / No-Gi"]);
+  const t = useT();
+  const [selected, setSelected] = useState<string[]>(["improveBjj"]);
 
   const toggle = (g: string) => {
     setSelected((prev) =>
@@ -28,13 +30,13 @@ export default function GoalsScreen() {
     <Screen>
       <View style={styles.top}>
         <BackButton />
-        <Text style={styles.title}>Your Goals</Text>
+        <Text style={styles.title}>{t("goals.title")}</Text>
         <View style={{ width: 40 }} />
       </View>
-      <Text style={styles.sub}>What do you want to achieve with RASHMAT?</Text>
+      <Text style={styles.sub}>{t("goals.sub")}</Text>
 
       <View style={styles.grid}>
-        {GOALS.map((g) => {
+        {GOAL_IDS.map((g) => {
           const on = selected.includes(g);
           return (
             <Pressable
@@ -42,14 +44,16 @@ export default function GoalsScreen() {
               onPress={() => toggle(g)}
               style={[styles.chip, on && styles.chipOn]}
             >
-              <Text style={[styles.chipText, on && styles.chipTextOn]}>{g}</Text>
+              <Text style={[styles.chipText, on && styles.chipTextOn]}>
+                {t(`goals.${g}`)}
+              </Text>
             </Pressable>
           );
         })}
       </View>
 
       <View style={{ marginTop: "auto" }}>
-        <Button label="Save goals  →" variant="accent" onPress={() => router.back()} />
+        <Button label={t("goals.save")} variant="accent" onPress={() => router.back()} />
       </View>
     </Screen>
   );

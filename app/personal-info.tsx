@@ -9,6 +9,7 @@ import { router } from "expo-router";
 import { Camera } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
+import { useT } from "@/src/i18n";
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -20,6 +21,7 @@ import {
 } from "react-native";
 
 export default function PersonalInfoScreen() {
+  const t = useT();
   const { profile, user, updateProfile, refreshProfile } = useAuth();
   const [name, setName] = useState("");
   const [city, setCity] = useState("");
@@ -110,7 +112,7 @@ export default function PersonalInfoScreen() {
         >
           <View style={styles.top}>
             <BackButton />
-            <Text style={styles.title}>Personal Information</Text>
+            <Text style={styles.title}>{t("screens.personalInfo")}</Text>
             <View style={{ width: 40 }} />
           </View>
 
@@ -125,15 +127,15 @@ export default function PersonalInfoScreen() {
           </Pressable>
 
           <View style={styles.form}>
-            <Text style={styles.label}>Full name</Text>
+            <Text style={styles.label}>{t("screens.fullName")}</Text>
             <TextField value={name} onChangeText={setName} />
-            <Text style={styles.label}>City</Text>
+            <Text style={styles.label}>{t("screens.city")}</Text>
             <TextField value={city} onChangeText={setCity} />
-            <Text style={styles.label}>Country</Text>
+            <Text style={styles.label}>{t("screens.country")}</Text>
             <TextField value={country} onChangeText={setCountry} />
-            <Text style={styles.label}>Age</Text>
+            <Text style={styles.label}>{t("screens.age")}</Text>
             <TextField value={age} onChangeText={setAge} keyboardType="number-pad" />
-            <Text style={styles.label}>Weight (kg)</Text>
+            <Text style={styles.label}>{t("screens.weightKg")}</Text>
             <TextField value={weight} onChangeText={setWeight} keyboardType="decimal-pad" />
           </View>
 

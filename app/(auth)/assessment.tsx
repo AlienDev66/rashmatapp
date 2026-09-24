@@ -9,8 +9,10 @@ import { router } from "expo-router";
 import { useMemo } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useT } from "@/src/i18n";
 
 export default function AssessmentScreen() {
+  const t = useT();
   const insets = useSafeAreaInsets();
   const { ready, answers, currentStep, setAnswers, setCurrentStep, complete } =
     useAssessmentPersistence();
@@ -151,7 +153,7 @@ export default function AssessmentScreen() {
 
       <View style={styles.footer}>
         {step.skippable ? (
-          <Button label="Prefer to skip, thanks!  ✕" variant="soft" onPress={goNext} />
+          <Button label={t("authExtra.skipThanks")} variant="soft" onPress={goNext} />
         ) : null}
         <Button
           label="Go  →"

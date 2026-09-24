@@ -1,4 +1,5 @@
 import { quotes } from "@/src/data/mock";
+import { useT } from "@/src/i18n";
 import { colors, fonts, radii, spacing } from "@/src/theme";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -7,6 +8,7 @@ import { useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 export default function QuoteScreen() {
+  const t = useT();
   const quote = quotes[0];
 
   useEffect(() => {
@@ -25,8 +27,8 @@ export default function QuoteScreen() {
         <View style={styles.icon}>
           <Text style={styles.marks}>”</Text>
         </View>
-        <Text style={styles.text}>{quote.text}</Text>
-        <Text style={styles.author}>— {quote.author}</Text>
+        <Text style={styles.text}>{t("quoteScreen.text")}</Text>
+        <Text style={styles.author}>— {t("quoteScreen.author")}</Text>
       </View>
     </View>
   );

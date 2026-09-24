@@ -34,8 +34,10 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useT } from "@/src/i18n";
 
 export default function WorkoutPreviewScreen() {
+  const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: session, loading, error, reload } = useWorkoutSession(id);
   const { programs } = useCatalog();
@@ -91,10 +93,10 @@ export default function WorkoutPreviewScreen() {
 
   const ensureAccess = () => {
     if (program?.isPremium && !enrolled) {
-      Alert.alert("Unlock required", "Demo-unlock this program to train.", [
-        { text: "Maybe later", style: "cancel" },
+      Alert.alert(t("workoutPreview.unlockRequired"), t("workoutPreview.unlockBody"), [
+        { text: t("workoutPreview.maybeLater"), style: "cancel" },
         {
-          text: "Unlock",
+          text: t("workoutPreview.unlock"),
           onPress: () =>
             router.push({ pathname: "/checkout", params: { programId: program.id } }),
         },
@@ -154,7 +156,10 @@ export default function WorkoutPreviewScreen() {
     if (!session) return;
     if (!ensureAccess()) return;
     if (session.exercises.length === 0) {
-      Alert.alert("Nothing to download", "This session has no drills yet.");
+      Alert.alert(
+        t("workoutPreview.nothingToDownload"),
+        t("workoutPreview.nothingToDownloadBody"),
+      );
       return;
     }
     setDownloading(true);
@@ -168,11 +173,11 @@ export default function WorkoutPreviewScreen() {
         onProgress: setDownloadPct,
       });
       setOfflineReady(true);
-      Alert.alert("Saved offline", "Videos are ready when you lose connection.");
+      Alert.alert(t("workoutPreview.savedOffline"), t("workoutPreview.savedOfflineBody"));
     } catch (e) {
       Alert.alert(
-        "Download failed",
-        e instanceof Error ? e.message : "Try again on Wi‑Fi.",
+        t("workoutPreview.downloadFailed"),
+        e instanceof Error ? e.message : t("workoutPreview.downloadFailedBody"),
       );
     } finally {
       setDownloading(false);
@@ -186,9 +191,9 @@ export default function WorkoutPreviewScreen() {
         error={error}
         empty={!session}
         emptyTone="training"
-        emptyTitle="Session not found"
-        emptyMessage="This session isn’t available. Pick another day from your program."
-        emptyActionLabel="Back"
+        emptyTitle={t("workoutPreview.notFound")}
+        emptyMessage={t("workoutPreview.notFoundBody")}
+        emptyActionLabel={t("common.back")}
         emptyOnAction={() => router.back()}
         onRetry={reload}
       >
@@ -240,9 +245,18 @@ export default function WorkoutPreviewScreen() {
               </View>
 
               <View style={styles.metaRow}>
-                <MetaChip icon={<Clock3 color={colors.black} size={14} />} label={`${session.minutes} min`} />
-                <MetaChip icon={<Layers color={colors.black} size={14} />} label={`${session.exercises.length} drills`} />
-                <MetaChip icon={<Play color={colors.black} size={14} />} label={`${setCount} rounds`} />
+                <MetaChip
+                  icon={<Clock3 color={colors.black} size={14} />}
+                  label={t("workoutPreview.minutesChip", { n: session.minutes })}
+                />
+                <MetaChip
+                  icon={<Layers color={colors.black} size={14} />}
+                  label={t("workoutPreview.drillsChip", { n: session.exercises.length })}
+                />
+                <MetaChip
+                  icon={<Play color={colors.black} size={14} />}
+                  label={t("workoutPreview.roundsChip", { n: setCount })}
+                />
               </View>
 
               <View style={styles.actionGrid}>
@@ -254,7 +268,7 @@ export default function WorkoutPreviewScreen() {
                       size={18}
                     />
                   }
-                  label="Favorite"
+                  label={t("workoutPreview.favorite")}
                   onPress={() => {
                     if (!program) return;
                     void toggleFavoriteProgram(program.id, user?.id).then((r) =>
@@ -264,35 +278,47 @@ export default function WorkoutPreviewScreen() {
                 />
                 <ActionBtn
                   icon={<Bookmark color={colors.white} size={18} />}
-                  label="Save offline"
+                  label={t("workoutPreview.saveOffline")}
                   onPress={() => void onDownload()}
                 />
                 <ActionBtn
                   icon={<History color={colors.white} size={18} />}
-                  label={historyCount ? `${historyCount} logs` : "History"}
+                  label={
+                    historyCount
+                      ? t("workoutPreview.logsCount", { n: historyCount })
+                      : t("workoutPreview.history")
+                  }
                   onPress={() =>
                     Alert.alert(
-                      "Session history",
+                      t("workoutPreview.historyTitle"),
                       historyCount
-                        ? `You've logged ${historyCount} set/round entries on this session.`
-                        : "No rounds logged yet — start the session to build history.",
+                        ? t("workoutPreview.historyBody", { n: historyCount })
+                        : t("workoutPreview.historyEmpty"),
                     )
                   }
                 />
                 <ActionBtn
                   icon={<CheckCircle2 color={alreadyDone ? colors.accent : colors.white} size={18} />}
-                  label={alreadyDone ? "Done" : "Mark off"}
+                  label={
+                    alreadyDone ? t("workoutPreview.done") : t("workoutPreview.markOff")
+                  }
                   onPress={() => {
                     if (alreadyDone) {
-                      Alert.alert("Already complete", "This session is already in your logs.");
+                      Alert.alert(
+                        t("workoutPreview.alreadyComplete"),
+                        t("workoutPreview.alreadyCompleteBody"),
+                      );
                       return;
                     }
                     Alert.alert(
-                      "Mark session complete?",
-                      "Credits XP without playing the full session.",
+                      t("workoutPreview.markTitle"),
+                      t("workoutPreview.markBody"),
                       [
-                        { text: "Cancel", style: "cancel" },
-                        { text: "Mark off", onPress: () => void onMarkOff() },
+                        { text: t("common.cancel"), style: "cancel" },
+                        {
+                          text: t("workoutPreview.markOff"),
+                          onPress: () => void onMarkOff(),
+                        },
                       ],
                     );
                   }}
@@ -300,40 +326,38 @@ export default function WorkoutPreviewScreen() {
               </View>
 
               <View style={styles.overviewCard}>
-                <Text style={styles.overviewTitle}>Session overview</Text>
+                <Text style={styles.overviewTitle}>{t("workoutPreview.overviewTitle")}</Text>
                 <View style={styles.overviewStats}>
                   <View style={styles.ovStat}>
                     <Text style={styles.ovValue}>{session.exercises.length}</Text>
-                    <Text style={styles.ovLabel}>Drills</Text>
+                    <Text style={styles.ovLabel}>{t("workoutPreview.drills")}</Text>
                   </View>
                   <View style={styles.ovDiv} />
                   <View style={styles.ovStat}>
                     <Text style={styles.ovValue}>{setCount}</Text>
-                    <Text style={styles.ovLabel}>Rounds</Text>
+                    <Text style={styles.ovLabel}>{t("workoutPreview.rounds")}</Text>
                   </View>
                   <View style={styles.ovDiv} />
                   <View style={styles.ovStat}>
                     <Text style={styles.ovValue}>{session.minutes}</Text>
-                    <Text style={styles.ovLabel}>Minutes</Text>
+                    <Text style={styles.ovLabel}>{t("workoutPreview.minutes")}</Text>
                   </View>
                 </View>
               </View>
 
               <View style={styles.flowHint}>
-                <Text style={styles.flowTitle}>How it works</Text>
-                <Text style={styles.flowBody}>
-                  Watch the drill · log the round · rest timer · next. Videos loop so you can match the movement.
-                </Text>
+                <Text style={styles.flowTitle}>{t("workoutPreview.howItWorks")}</Text>
+                <Text style={styles.flowBody}>{t("workoutPreview.howItWorksBody")}</Text>
               </View>
 
               <View style={styles.body}>
-                <Text style={styles.section}>SESSION DRILLS</Text>
+                <Text style={styles.section}>{t("workoutPreview.sectionDrills")}</Text>
                 {session.exercises.length === 0 ? (
                   <EmptyState
                     compact
                     tone="training"
-                    title="No drills yet"
-                    message="This session doesn’t have exercises published. Check back soon."
+                    title={t("workoutPreview.noDrills")}
+                    message={t("workoutPreview.noDrillsBody")}
                   />
                 ) : (
                   <View style={{ gap: 10 }}>
@@ -348,9 +372,11 @@ export default function WorkoutPreviewScreen() {
                             <Text style={styles.exMeta}>
                               {ex.reps}
                               {"  ·  "}
-                              {sets} set{sets === 1 ? "" : "s"}
+                              {sets === 1
+                                ? t("workoutPreview.setOne")
+                                : t("workoutPreview.setMany", { n: sets })}
                               {"  ·  "}
-                              {ex.restSeconds ?? 60}s rest
+                              {t("workoutPreview.restSeconds", { n: ex.restSeconds ?? 60 })}
                             </Text>
                           </View>
                         </View>
@@ -365,10 +391,10 @@ export default function WorkoutPreviewScreen() {
               <Button
                 label={
                   !canStart
-                    ? "Drills unavailable"
+                    ? t("workoutPreview.drillsUnavailable")
                     : canResume
-                      ? "Resume session  →"
-                      : "Start session  →"
+                      ? t("workoutPreview.resumeSession")
+                      : t("workoutPreview.startSession")
                 }
                 variant="accent"
                 loading={starting}

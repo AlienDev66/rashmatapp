@@ -10,8 +10,10 @@ import { colors, fonts, radii, spacing } from "@/src/theme";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronRight } from "lucide-react-native";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useT } from "@/src/i18n";
 
 export default function LibraryFederationScreen() {
+  const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
   const federation = getFederation(id ?? "");
   const list = federation
@@ -23,14 +25,14 @@ export default function LibraryFederationScreen() {
       <Screen>
         <View style={styles.top}>
           <BackButton />
-          <Text style={styles.title}>Library</Text>
+          <Text style={styles.title}>{t("screens.library")}</Text>
           <View style={{ width: 40 }} />
         </View>
         <EmptyState
           tone="missing"
-          title="Federation not found"
-          message="That ruleset isn’t in the library yet."
-          actionLabel="Back to library  →"
+          title={t("rules.fedNotFound")}
+          message={t("rules.fedNotFoundBody")}
+          actionLabel={t("rules.backToLibrary")}
           onAction={() => router.replace("/library")}
         />
       </Screen>
@@ -49,7 +51,7 @@ export default function LibraryFederationScreen() {
         <Text style={styles.hero}>{federation.name}</Text>
         <Text style={styles.blurb}>{federation.blurb}</Text>
 
-        <Text style={styles.section}>GUIDES</Text>
+        <Text style={styles.section}>{t("rules.guides")}</Text>
         {list.map((g) => (
           <Pressable
             key={g.id}

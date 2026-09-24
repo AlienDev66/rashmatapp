@@ -15,6 +15,7 @@ import { colors, fonts, radii, spacing } from "@/src/theme";
 import { Link, router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import {
+import { useT } from "@/src/i18n";
   ActivityIndicator,
   Alert,
   Linking,
@@ -27,6 +28,7 @@ import {
 } from "react-native";
 
 export default function StudioHomeScreen() {
+  const t = useT();
   const { user, profile, refreshProfile } = useAuth();
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -59,7 +61,7 @@ export default function StudioHomeScreen() {
 
   const onActivate = async () => {
     if (!user) {
-      Alert.alert("Sign in required", "Create an account to become a creator.");
+      Alert.alert(t("common.signInRequired"), t("studioScreens.signInBody"));
       router.push("/(auth)/sign-in");
       return;
     }
@@ -67,7 +69,7 @@ export default function StudioHomeScreen() {
     const { error } = await activateCreator(profile?.full_name ?? undefined);
     setBusy(false);
     if (error) {
-      Alert.alert("Could not activate", error);
+      Alert.alert(t("studioScreens.couldNotActivate"), error);
       return;
     }
     await refreshProfile();
@@ -79,15 +81,15 @@ export default function StudioHomeScreen() {
       <Screen>
         <View style={styles.top}>
           <BackButton />
-          <Text style={styles.title}>Creator Studio</Text>
+          <Text style={styles.title}>{t("studioApp.title")}</Text>
           <View style={{ width: 40 }} />
         </View>
-        <Text style={styles.hero}>Publish martial arts programs</Text>
-        <Text style={styles.sub}>
-          Build drills and camps like STNDRD — track every subscriber&apos;s progress as they train.
-        </Text>
+        <Text style={styles.hero}>{t("studioScreens.heroPitch")}</Text>
+        <Text style={styles.sub}>{t("studioScreens.pitchSub")}</Text>
         <Button
-          label={busy ? "Activating…" : "Become a creator  →"}
+          label={
+            busy ? t("studioScreens.activating") : t("studioScreens.becomeCreator")
+          }
           variant="accent"
           disabled={busy}
           onPress={() => void onActivate()}
@@ -101,25 +103,25 @@ export default function StudioHomeScreen() {
     <Screen>
       <View style={styles.top}>
         <BackButton />
-        <Text style={styles.title}>Creator Studio</Text>
+        <Text style={styles.title}>{t("studioApp.title")}</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
         <Text style={styles.hero}>@{profile.creator_slug}</Text>
-        <Text style={styles.sub}>Minimal studio — create, publish, and watch student progress.</Text>
+        <Text style={styles.sub}>{t("studioScreens.minimalSub")}</Text>
 
         <View style={styles.stats}>
-          <Stat label="Programs" value={String(programs.length)} />
-          <Stat label="Students" value={String(students.length)} />
+          <Stat label={t("studioScreens.programs")} value={String(programs.length)} />
+          <Stat label={t("studioScreens.students")} value={String(students.length)} />
           <Pressable style={styles.stat} onPress={() => router.push("/studio/followers")}>
             <Text style={styles.statValue}>{followerCount}</Text>
-            <Text style={styles.statLabel}>Followers</Text>
+            <Text style={styles.statLabel}>{t("studioScreens.followers")}</Text>
           </Pressable>
         </View>
 
         <Button
-          label="New program  →"
+          label={t("studioScreens.newProgramCta")}
           variant="accent"
           onPress={() => router.push("/studio/new")}
           style={{ marginTop: 8 }}
@@ -132,12 +134,12 @@ export default function StudioHomeScreen() {
               router.push("/studio/cms");
             } else {
               Alert.alert(
-                "Full Studio",
-                "Open RASHMAT in a browser for the full CMS editor (sessions, drills, Mux IDs).",
+                t("studioScreens.fullStudio"),
+                t("studioScreens.fullStudioBody"),
                 [
-                  { text: "OK" },
+                  { text: t("common.ok") },
                   {
-                    text: "Open CMS path",
+                    text: t("studioScreens.openCmsPath"),
                     onPress: () => {
                       void Linking.openURL("/studio/cms");
                     },
@@ -148,19 +150,19 @@ export default function StudioHomeScreen() {
             }
           }}
         >
-          <Text style={styles.webLinkText}>Open full Studio CMS</Text>
+          <Text style={styles.webLinkText}>{t("studioScreens.openFullCms")}</Text>
         </Pressable>
 
-        <Text style={styles.section}>YOUR PROGRAMS</Text>
+        <Text style={styles.section}>{t("studioScreens.yourPrograms")}</Text>
         {loading ? (
           <ActivityIndicator color={colors.accent} />
         ) : programs.length === 0 ? (
           <EmptyState
             compact
             tone="studio"
-            title="No programs yet"
-            message="Create your first camp or drill pack and publish it to athletes."
-            actionLabel="New program  →"
+            title={t("studioScreens.noPrograms")}
+            message={t("studioScreens.noProgramsBody")}
+            actionLabel={t("studioScreens.newProgramCta")}
             onAction={() => router.push("/studio/new")}
           />
         ) : (
@@ -174,7 +176,13 @@ export default function StudioHomeScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.cardTitle}>{p.title}</Text>
                   <Text style={styles.cardMeta}>
-                    {p.status === "published" ? "Published" : "Draft"} · {p.weeks}w
+                    {t("studioScreens.programMeta", {
+                      status:
+                        p.status === "published"
+                          ? t("studioScreens.published")
+                          : t("studioScreens.draft"),
+                      weeks: p.weeks,
+                    })}
                   </Text>
                 </View>
                 <Text style={styles.chev}>›</Text>
@@ -184,28 +192,30 @@ export default function StudioHomeScreen() {
         )}
 
         <View style={styles.rowBetween}>
-          <Text style={styles.section}>FOLLOWERS</Text>
+          <Text style={styles.section}>{t("studioScreens.followersSection")}</Text>
           <Link href="/studio/followers" asChild>
             <Pressable>
-              <Text style={styles.seeAll}>See all</Text>
+              <Text style={styles.seeAll}>{t("studioScreens.seeAll")}</Text>
             </Pressable>
           </Link>
         </View>
         <Pressable style={styles.card} onPress={() => router.push("/studio/followers")}>
           <View style={{ flex: 1 }}>
             <Text style={styles.cardTitle}>
-              {followerCount} follower{followerCount === 1 ? "" : "s"}
+              {followerCount === 1
+                ? t("studioScreens.followerOne")
+                : t("studioScreens.followerMany", { n: followerCount })}
             </Text>
-            <Text style={styles.cardMeta}>Athletes who follow your creator profile</Text>
+            <Text style={styles.cardMeta}>{t("studioScreens.followersCardMeta")}</Text>
           </View>
           <Text style={styles.chev}>›</Text>
         </Pressable>
 
         <View style={styles.rowBetween}>
-          <Text style={styles.section}>STUDENTS</Text>
+          <Text style={styles.section}>{t("studioScreens.studentsSection")}</Text>
           <Link href="/studio/students" asChild>
             <Pressable>
-              <Text style={styles.seeAll}>See all</Text>
+              <Text style={styles.seeAll}>{t("studioScreens.seeAll")}</Text>
             </Pressable>
           </Link>
         </View>
@@ -214,7 +224,10 @@ export default function StudioHomeScreen() {
             <View style={{ flex: 1 }}>
               <Text style={styles.cardTitle}>{s.student_name}</Text>
               <Text style={styles.cardMeta}>
-                {s.program_title} · Day {s.current_day}
+                {t("studioScreens.studentMeta", {
+                  program: s.program_title,
+                  day: s.current_day,
+                })}
               </Text>
             </View>
             <Text style={styles.pct}>{s.progress_pct}%</Text>
@@ -224,8 +237,8 @@ export default function StudioHomeScreen() {
           <EmptyState
             compact
             tone="studio"
-            title="No students yet"
-            message="Subscribers appear here after they unlock a program."
+            title={t("studioScreens.noStudents")}
+            message={t("studioScreens.noStudentsBody")}
           />
         ) : null}
       </ScrollView>

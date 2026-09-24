@@ -1,3 +1,4 @@
+import { useT } from "@/src/i18n";
 import type { ScheduleDay } from "@/src/lib/trainSchedule";
 import { colors, fonts, spacing } from "@/src/theme";
 import { Check, ChevronLeft, ChevronRight, Moon } from "lucide-react-native";
@@ -22,6 +23,8 @@ export function WeekDayStrip({
   onNextWeek,
   onSelectDay,
 }: Props) {
+  const t = useT();
+
   return (
     <View style={styles.wrap}>
       <View style={styles.weekRow}>
@@ -33,7 +36,7 @@ export function WeekDayStrip({
         >
           <ChevronLeft color={colors.white} size={22} />
         </Pressable>
-        <Text style={styles.weekTitle}>Week {weekIndex + 1}</Text>
+        <Text style={styles.weekTitle}>{t("train.week", { n: weekIndex + 1 })}</Text>
         <Pressable
           onPress={onNextWeek}
           disabled={weekIndex >= weekTotal - 1}
@@ -58,7 +61,9 @@ export function WeekDayStrip({
               onPress={() => onSelectDay(d)}
             >
               {selected ? <View style={styles.dot} /> : <View style={styles.dotSpacer} />}
-              <Text style={[styles.dayLabel, selected && styles.dayLabelOn]}>DAY {d.dayInWeek}</Text>
+              <Text style={[styles.dayLabel, selected && styles.dayLabelOn]}>
+                {t("train.dayShort", { n: d.dayInWeek })}
+              </Text>
               <View style={[styles.dayGlyph, selected && styles.dayGlyphOn]}>
                 {d.status === "done" ? (
                   <Check color={selected ? colors.black : colors.accent} size={16} strokeWidth={2.5} />

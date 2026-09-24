@@ -8,8 +8,10 @@ import { router, useFocusEffect } from "expo-router";
 import { ChevronRight, Trophy } from "lucide-react-native";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useT } from "@/src/i18n";
 
 export default function AchievementsScreen() {
+  const t = useT();
   const { user, profile, refreshProfile } = useAuth();
   const [stats, setStats] = useState<AthleteStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,7 +44,7 @@ export default function AchievementsScreen() {
     <Screen>
       <View style={styles.top}>
         <BackButton />
-        <Text style={styles.title}>Achievements</Text>
+        <Text style={styles.title}>{t("screens.achievements")}</Text>
         <Pressable style={styles.iconBtn} onPress={() => router.push("/leaderboard")}>
           <Trophy color={colors.accent} size={18} />
         </Pressable>
@@ -55,45 +57,56 @@ export default function AchievementsScreen() {
           <View style={styles.card}>
             <View style={styles.cardHead}>
               <Text style={styles.name}>
-                {(profile?.full_name ?? user?.email?.split("@")[0] ?? "Athlete").toUpperCase()}
+                {(profile?.full_name ?? user?.email?.split("@")[0] ?? t("common.athlete")).toUpperCase()}
               </Text>
               <Text style={styles.xp}>{(stats?.xp ?? profile?.xp ?? 0).toLocaleString()} XP</Text>
             </View>
             <View style={styles.metrics}>
-              <Metric value={String(stats?.streakDays ?? 0)} label="Streak" />
-              <Metric value={String(stats?.totalSessions ?? 0)} label="Sessions" />
-              <Metric value={String(stats?.campsCompleted ?? 0)} label="Camps" />
+              <Metric value={String(stats?.streakDays ?? 0)} label={t("achievementsExtra.streak")} />
+              <Metric
+                value={String(stats?.totalSessions ?? 0)}
+                label={t("achievementsExtra.sessions")}
+              />
+              <Metric
+                value={String(stats?.campsCompleted ?? 0)}
+                label={t("achievementsExtra.camps")}
+              />
             </View>
           </View>
 
           <Pressable style={styles.linkRow} onPress={() => router.push("/medals")}>
-            <Text style={styles.linkTitle}>Medals</Text>
+            <Text style={styles.linkTitle}>{t("screens.medals")}</Text>
             <Text style={styles.linkMeta}>
-              {earned.length}/{MEDAL_DEFS.length} · View all
+              {t("achievementsExtra.viewAll", {
+                earned: earned.length,
+                total: MEDAL_DEFS.length,
+              })}
             </Text>
             <ChevronRight color={colors.textDim} size={18} />
           </Pressable>
 
           <Pressable style={styles.linkRow} onPress={() => router.push("/leaderboard")}>
-            <Text style={styles.linkTitle}>Leaderboard</Text>
-            <Text style={styles.linkMeta}>All time · Monthly</Text>
+            <Text style={styles.linkTitle}>{t("screens.leaderboard")}</Text>
+            <Text style={styles.linkMeta}>{t("screens.allTimeMonthly")}</Text>
             <ChevronRight color={colors.textDim} size={18} />
           </Pressable>
 
           <Pressable style={styles.linkRow} onPress={() => router.push("/workout-logs")}>
-            <Text style={styles.linkTitle}>Workout logs</Text>
-            <Text style={styles.linkMeta}>Session history</Text>
+            <Text style={styles.linkTitle}>{t("screens.workoutLogs")}</Text>
+            <Text style={styles.linkMeta}>{t("screens.sessionHistory")}</Text>
             <ChevronRight color={colors.textDim} size={18} />
           </Pressable>
 
-          <Text style={styles.section}>RECENT MEDALS</Text>
+          <Text style={styles.section}>{t("achievementsExtra.recentMedals")}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.medalRow}>
             {(earned.length ? earned : locked.slice(0, 3)).map((m) => {
               const unlocked = owned.has(m.id);
               return (
                 <View key={m.id} style={[styles.medalChip, !unlocked && styles.medalLocked]}>
                   <Text style={styles.medalTitle}>{m.title}</Text>
-                  <Text style={styles.medalXp}>{m.xpReward} XP</Text>
+                  <Text style={styles.medalXp}>
+                    {t("achievementsExtra.xpValue", { n: m.xpReward })}
+                  </Text>
                 </View>
               );
             })}

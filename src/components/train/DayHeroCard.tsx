@@ -1,5 +1,6 @@
 import { CoverImage } from "@/src/components/ui/Avatar";
 import { Button } from "@/src/components/ui/Button";
+import { useT } from "@/src/i18n";
 import type { ScheduleDay } from "@/src/lib/trainSchedule";
 import { colors, fonts, radii, spacing } from "@/src/theme";
 import { LinearGradient } from "expo-linear-gradient";
@@ -13,18 +14,20 @@ type Props = {
 };
 
 export function DayHeroCard({ day, onStart, onPreview }: Props) {
+  const t = useT();
+
   if (day.rest || !day.session) {
     return (
       <View style={styles.restCard}>
         <Moon color={colors.accent} size={36} />
-        <Text style={styles.restTitle}>Rest day</Text>
-        <Text style={styles.restSub}>Recover, hydrate, and come back sharper.</Text>
+        <Text style={styles.restTitle}>{t("train.restDay")}</Text>
+        <Text style={styles.restSub}>{t("train.restSub")}</Text>
       </View>
     );
   }
 
   const s = day.session;
-  const tags = s.tags.length > 0 ? s.tags.join(" · ") : "Training day";
+  const tags = s.tags.length > 0 ? s.tags.join(" · ") : t("train.trainingDay");
 
   return (
     <View style={styles.card}>
@@ -38,18 +41,31 @@ export function DayHeroCard({ day, onStart, onPreview }: Props) {
         <Text style={styles.title}>{s.title}</Text>
         <Text style={styles.tags}>{tags}</Text>
         <View style={styles.stats}>
-          <Stat value={String(s.exerciseCount || s.exercises.length)} label="Drills" />
+          <Stat
+            value={String(s.exerciseCount || s.exercises.length)}
+            label={t("train.drills")}
+          />
           <View style={styles.statDiv} />
-          <Stat value={String(s.sets)} label="Sets" />
+          <Stat value={String(s.sets)} label={t("train.sets")} />
           <View style={styles.statDiv} />
-          <Stat value={String(s.minutes)} label="Minutes" />
+          <Stat value={String(s.minutes)} label={t("train.minutes")} />
         </View>
         <View style={styles.actions}>
           {onPreview ? (
-            <Button label="Preview" variant="ghost" onPress={onPreview} style={styles.btn} />
+            <Button
+              label={t("train.preview")}
+              variant="ghost"
+              onPress={onPreview}
+              style={styles.btn}
+            />
           ) : null}
           {onStart ? (
-            <Button label="Start session  →" variant="accent" onPress={onStart} style={styles.btn} />
+            <Button
+              label={t("train.startSession")}
+              variant="accent"
+              onPress={onStart}
+              style={styles.btn}
+            />
           ) : null}
         </View>
       </View>

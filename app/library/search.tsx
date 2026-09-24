@@ -8,8 +8,10 @@ import { router } from "expo-router";
 import { ChevronRight } from "lucide-react-native";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useT } from "@/src/i18n";
 
 export default function LibrarySearchScreen() {
+  const t = useT();
   const [q, setQ] = useState("");
   const results = useMemo(() => searchGuides(q), [q]);
 
@@ -17,12 +19,12 @@ export default function LibrarySearchScreen() {
     <Screen>
       <View style={styles.top}>
         <BackButton />
-        <Text style={styles.title}>Search rules</Text>
+        <Text style={styles.title}>{t("rules.searchTitle")}</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <TextField
-        placeholder="IBJJF, heel hooks, weight class…"
+        placeholder={t("rules.searchPlaceholder")}
         value={q}
         onChangeText={setQ}
         autoFocus
@@ -39,8 +41,8 @@ export default function LibrarySearchScreen() {
           <EmptyState
             compact
             tone="default"
-            title="No matches"
-            message="Try a federation name, belt, or topic (scoring, fouls, kids)."
+            title={t("rules.noMatches")}
+            message={t("rules.noMatchesBody")}
           />
         ) : (
           results.map((g) => {

@@ -8,8 +8,10 @@ import { colors, fonts, radii } from "@/src/theme";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
+import { useT } from "@/src/i18n";
 
 export default function CreatorFollowersScreen() {
+  const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { creators } = useCatalog();
   const creator = creators.find((c) => c.id === id);
@@ -39,12 +41,12 @@ export default function CreatorFollowersScreen() {
     <Screen>
       <View style={styles.top}>
         <BackButton />
-        <Text style={styles.title}>Followers</Text>
+        <Text style={styles.title}>{t("followersScreen.title")}</Text>
         <View style={{ width: 40 }} />
       </View>
       {creator ? (
         <Text style={styles.sub}>
-          Athletes following {creator.name} · {rows.length}
+          {t("followersScreen.sub", { name: creator.name, count: rows.length })}
         </Text>
       ) : null}
 
@@ -53,8 +55,8 @@ export default function CreatorFollowersScreen() {
       {!loading && rows.length === 0 ? (
         <EmptyState
           tone="creators"
-          title="No followers yet"
-          message="When athletes follow this creator, they show up here."
+          title={t("followersScreen.empty")}
+          message={t("followersScreen.emptyBody")}
         />
       ) : (
         <FlatList
@@ -67,7 +69,9 @@ export default function CreatorFollowersScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.name}>{item.fullName}</Text>
                 <Text style={styles.meta}>
-                  Followed {new Date(item.followedAt).toLocaleDateString()}
+                  {t("followersScreen.followedAt", {
+                    date: new Date(item.followedAt).toLocaleDateString(),
+                  })}
                 </Text>
               </View>
             </View>

@@ -8,22 +8,32 @@ import { colors, fonts, spacing } from "@/src/theme";
 import { router } from "expo-router";
 import { useState } from "react";
 import { Alert, StyleSheet, Text, View } from "react-native";
+import { useT } from "@/src/i18n";
 
 export default function StudioNewProgramScreen() {
+  const t = useT();
   const { user, profile, refreshProfile } = useAuth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [firstSession, setFirstSession] = useState("Day 1 — Fundamentals");
+  const [firstSession, setFirstSession] = useState(
+    t("studioScreens.firstSessionDefault"),
+  );
   const [busy, setBusy] = useState(false);
 
   const onCreate = async (andPublish: boolean) => {
     if (!user || !profile?.creator_slug) {
-      Alert.alert("Creator required", "Activate creator mode first.");
+      Alert.alert(
+        t("studioScreens.creatorRequired"),
+        t("studioScreens.creatorRequiredBody"),
+      );
       router.replace("/studio");
       return;
     }
     if (!title.trim()) {
-      Alert.alert("Title required", "Name your program or drill pack.");
+      Alert.alert(
+        t("studioScreens.titleRequired"),
+        t("studioScreens.titleRequiredBody"),
+      );
       return;
     }
     setBusy(true);
@@ -35,7 +45,7 @@ export default function StudioNewProgramScreen() {
     });
     if (error || !program) {
       setBusy(false);
-      Alert.alert("Could not create", error ?? "Try again");
+      Alert.alert(t("studioScreens.couldNotCreate"), error ?? t("home.tryAgain"));
       return;
     }
     if (firstSession.trim()) {
@@ -43,14 +53,17 @@ export default function StudioNewProgramScreen() {
         programId: program.id,
         title: firstSession.trim(),
         day: 1,
-        description: "Add drills in the full Studio CMS.",
+        description: t("studioScreens.drillsHint"),
       });
     }
     if (andPublish) {
       const pub = await publishProgram(program.id, true);
       if (pub.error) {
         setBusy(false);
-        Alert.alert("Saved as draft", `Publish failed: ${pub.error}`);
+        Alert.alert(
+          t("studioScreens.savedAsDraft"),
+          t("studioScreens.publishFailedMsg", { error: pub.error }),
+        );
         router.replace(`/studio/${program.id}`);
         return;
       }
@@ -64,32 +77,32 @@ export default function StudioNewProgramScreen() {
     <Screen>
       <View style={styles.top}>
         <BackButton />
-        <Text style={styles.title}>New program</Text>
+        <Text style={styles.title}>{t("studioScreens.newTitle")}</Text>
         <View style={{ width: 40 }} />
       </View>
-      <Text style={styles.sub}>Minimal create — add more sessions and drills in Studio CMS.</Text>
+      <Text style={styles.sub}>{t("studioScreens.newSub")}</Text>
       <View style={styles.form}>
-        <TextField placeholder="Program title" value={title} onChangeText={setTitle} />
+        <TextField placeholder={t("studioScreens.programTitlePlaceholder")} value={title} onChangeText={setTitle} />
         <TextField
-          placeholder="Short description"
+          placeholder={t("studioScreens.shortDescPlaceholder")}
           value={description}
           onChangeText={setDescription}
         />
         <TextField
-          placeholder="First session title"
+          placeholder={t("studioScreens.firstSessionPlaceholder")}
           value={firstSession}
           onChangeText={setFirstSession}
         />
       </View>
       <View style={{ marginTop: "auto", gap: 10 }}>
         <Button
-          label={busy ? "…" : "Create & publish  →"}
+          label={busy ? "…" : t("studioScreens.createPublish")}
           variant="accent"
           disabled={busy}
           onPress={() => void onCreate(true)}
         />
         <Button
-          label="Save as draft"
+          label={t("studioScreens.saveDraft")}
           variant="surface"
           disabled={busy}
           onPress={() => void onCreate(false)}

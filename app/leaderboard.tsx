@@ -14,6 +14,7 @@ import { colors, fonts, radii, spacing } from "@/src/theme";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
+import { useT } from "@/src/i18n";
   ActivityIndicator,
   Pressable,
   ScrollView,
@@ -23,6 +24,7 @@ import {
 } from "react-native";
 
 export default function LeaderboardScreen() {
+  const t = useT();
   const { user, profile } = useAuth();
   const { enrollments } = useProgress();
   const { programs } = useCatalog();
@@ -63,14 +65,14 @@ export default function LeaderboardScreen() {
     if ((profile?.xp ?? 0) > 0) {
       return {
         userId: user.id,
-        fullName: profile?.full_name ?? "You",
+        fullName: profile?.full_name ?? t("board.you"),
         avatarUrl: profile?.avatar_url ?? null,
         xp: profile?.xp ?? 0,
         rank: 0,
       } satisfies LeaderboardEntry;
     }
     return null;
-  }, [rows, user, profile]);
+  }, [rows, user, profile, t]);
 
   const podium = rows.slice(0, 3);
   const listRows = rows.filter((r) => r.userId !== user?.id);
@@ -84,7 +86,7 @@ export default function LeaderboardScreen() {
     <Screen>
       <View style={styles.top}>
         <BackButton />
-        <Text style={styles.title}>Leaderboard</Text>
+        <Text style={styles.title}>{t("screens.leaderboard")}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -95,7 +97,7 @@ export default function LeaderboardScreen() {
             onPress={() => setPeriod("all_time")}
           >
             <Text style={[styles.tabText, period === "all_time" && styles.tabTextOn]}>
-              All time
+              {t("board.allTime")}
             </Text>
           </Pressable>
           <Pressable
@@ -103,12 +105,12 @@ export default function LeaderboardScreen() {
             onPress={() => setPeriod("monthly")}
           >
             <Text style={[styles.tabText, period === "monthly" && styles.tabTextOn]}>
-              Monthly
+              {t("board.monthly")}
             </Text>
           </Pressable>
         </View>
       ) : (
-        <Text style={styles.campHint}>XP earned in this camp</Text>
+        <Text style={styles.campHint}>{t("board.campHint")}</Text>
       )}
 
       {campOptions.length > 0 ? (
@@ -123,7 +125,9 @@ export default function LeaderboardScreen() {
               style={[styles.chip, isGlobal && styles.chipOn]}
               onPress={() => setScope("global")}
             >
-              <Text style={[styles.chipText, isGlobal && styles.chipTextOn]}>Global</Text>
+              <Text style={[styles.chipText, isGlobal && styles.chipTextOn]}>
+                {t("board.global")}
+              </Text>
             </Pressable>
             {campOptions.map((p) => {
               const on = scope === p.id;
@@ -148,27 +152,29 @@ export default function LeaderboardScreen() {
       ) : rows.length === 0 ? (
         <EmptyState
           tone="default"
-          title="No rankings yet"
-          message="Complete sessions to earn XP and climb the board."
+          title={t("board.noRankings")}
+          message={t("board.noRankingsBody")}
         />
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
           {podium.length >= 2 ? (
             <View style={styles.podium}>
-              <PodiumSlot entry={podium[1]} place={2} />
-              <PodiumSlot entry={podium[0]} place={1} featured />
-              <PodiumSlot entry={podium[2]} place={3} />
+              <PodiumSlot entry={podium[1]} place={2} t={t} />
+              <PodiumSlot entry={podium[0]} place={1} featured t={t} />
+              <PodiumSlot entry={podium[2]} place={3} t={t} />
             </View>
           ) : podium[0] ? (
             <View style={styles.soloPodium}>
               <Avatar uri={podium[0].avatarUrl} name={podium[0].fullName} size={72} />
-              <Text style={styles.place}>1st</Text>
+              <Text style={styles.place}>{t("board.firstPlace")}</Text>
               <Text style={styles.podiumName} numberOfLines={1}>
-                {podium[0].userId === user?.id ? "You" : podium[0].fullName}
+                {podium[0].userId === user?.id ? t("board.you") : podium[0].fullName}
               </Text>
-              <Text style={styles.podiumXp}>{podium[0].xp.toLocaleString()} XP</Text>
+              <Text style={styles.podiumXp}>
+                {t("board.xpValue", { n: podium[0].xp.toLocaleString() })}
+              </Text>
               {rows.length === 1 ? (
-                <Text style={styles.soloHint}>Be the first — invite a training partner to climb.</Text>
+                <Text style={styles.soloHint}>{t("board.soloHint")}</Text>
               ) : null}
             </View>
           ) : null}
@@ -178,18 +184,22 @@ export default function LeaderboardScreen() {
               <Text style={styles.rankNum}>{you.rank > 0 ? you.rank : "—"}</Text>
               <Avatar uri={you.avatarUrl ?? profile?.avatar_url} name={you.fullName} size={40} />
               <View style={{ flex: 1 }}>
-                <Text style={styles.youLabel}>You</Text>
+                <Text style={styles.youLabel}>{t("board.you")}</Text>
                 <Text style={styles.youRank}>
-                  {you.rank > 0 ? `${you.rank}${ordinal(you.rank)}` : "Unranked"}
+                  {you.rank > 0
+                    ? `${you.rank}${ordinal(you.rank, t)}`
+                    : t("board.unranked")}
                 </Text>
               </View>
-              <Text style={styles.youXp}>{you.xp.toLocaleString()} XP</Text>
+              <Text style={styles.youXp}>
+                {t("board.xpValue", { n: you.xp.toLocaleString() })}
+              </Text>
             </View>
           ) : null}
 
-          <Text style={styles.listLabel}>RANKINGS</Text>
+          <Text style={styles.listLabel}>{t("board.rankings")}</Text>
           {listRows.length === 0 && you ? (
-            <Text style={styles.emptyPeers}>No other athletes on this board yet.</Text>
+            <Text style={styles.emptyPeers}>{t("board.emptyPeers")}</Text>
           ) : null}
           {listRows.map((r) => (
             <View key={r.userId} style={styles.row}>
@@ -199,11 +209,15 @@ export default function LeaderboardScreen() {
                 <Text style={styles.rowName}>{r.fullName}</Text>
                 <Text style={styles.rowRank}>
                   {r.rank}
-                  {ordinal(r.rank)}
-                  {r.sessionsDone != null ? ` · ${r.sessionsDone} sessions` : ""}
+                  {ordinal(r.rank, t)}
+                  {r.sessionsDone != null
+                    ? ` · ${t("board.sessionsDone", { n: r.sessionsDone })}`
+                    : ""}
                 </Text>
               </View>
-              <Text style={styles.rowXp}>{r.xp.toLocaleString()} XP</Text>
+              <Text style={styles.rowXp}>
+                {t("board.xpValue", { n: r.xp.toLocaleString() })}
+              </Text>
             </View>
           ))}
         </ScrollView>
@@ -212,14 +226,18 @@ export default function LeaderboardScreen() {
   );
 }
 
+type Translate = (key: string, params?: Record<string, string | number>) => string;
+
 function PodiumSlot({
   entry,
   place,
   featured,
+  t,
 }: {
   entry?: LeaderboardEntry;
   place: 1 | 2 | 3;
   featured?: boolean;
+  t: Translate;
 }) {
   if (!entry) {
     return <View style={styles.podiumSlot} />;
@@ -230,29 +248,31 @@ function PodiumSlot({
       <View style={[styles.placePill, featured && styles.placePillFirst]}>
         <Text style={[styles.placePillText, featured && styles.placePillTextFirst]}>
           {place}
-          {ordinal(place)}
+          {ordinal(place, t)}
         </Text>
       </View>
       <Text style={styles.podiumName} numberOfLines={1}>
         {entry.fullName}
       </Text>
-      <Text style={styles.podiumXp}>{entry.xp.toLocaleString()} XP</Text>
+      <Text style={styles.podiumXp}>
+        {t("board.xpValue", { n: entry.xp.toLocaleString() })}
+      </Text>
     </View>
   );
 }
 
-function ordinal(n: number) {
+function ordinal(n: number, t: Translate) {
   const v = n % 100;
-  if (v >= 11 && v <= 13) return "th";
+  if (v >= 11 && v <= 13) return t("board.ordN");
   switch (n % 10) {
     case 1:
-      return "st";
+      return t("board.ord1");
     case 2:
-      return "nd";
+      return t("board.ord2");
     case 3:
-      return "rd";
+      return t("board.ord3");
     default:
-      return "th";
+      return t("board.ordN");
   }
 }
 

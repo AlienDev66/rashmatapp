@@ -23,16 +23,15 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useT } from "@/src/i18n";
 
-function formatStoryDate(d = new Date()) {
-  const months = [
-    "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
-    "JUL", "AUG", "SEP", "OCT", "NOV", "DEC",
-  ];
+function formatStoryDate(monthsShort: string, d = new Date()) {
+  const months = monthsShort.split(",");
   return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 export default function WorkoutCompleteScreen() {
+  const t = useT();
   const { id, xp } = useLocalSearchParams<{ id?: string; xp?: string }>();
   const { data: session, loading, error, reload } = useWorkoutSession(id);
   const insets = useSafeAreaInsets();
@@ -43,7 +42,10 @@ export default function WorkoutCompleteScreen() {
   const xpAnim = useRef(new Animated.Value(0)).current;
   const [displayXp, setDisplayXp] = useState(0);
   const storyRef = useRef<View>(null);
-  const dateLabel = useMemo(() => formatStoryDate(), []);
+  const dateLabel = useMemo(
+    () => formatStoryDate(t("workoutDone.monthsShort")),
+    [t],
+  );
 
   const storyWidth = Math.min(280, screenW - 72);
 
@@ -86,8 +88,8 @@ export default function WorkoutCompleteScreen() {
       });
     } catch (e) {
       Alert.alert(
-        "Couldn’t share story",
-        e instanceof Error ? e.message : "Install Instagram or try again.",
+        t("workoutDone.shareFailTitle"),
+        e instanceof Error ? e.message : t("workoutDone.shareFailBody"),
       );
     } finally {
       setSharing(false);
@@ -101,9 +103,9 @@ export default function WorkoutCompleteScreen() {
         error={error}
         empty={!id || !session}
         emptyTone="training"
-        emptyTitle="Session not found"
-        emptyMessage="We couldn’t load this session summary."
-        emptyActionLabel="Back to home  →"
+        emptyTitle={t("workoutDone.notFound")}
+        emptyMessage={t("workoutDone.notFoundBody")}
+        emptyActionLabel={t("workoutDone.backHome")}
         emptyOnAction={() => router.replace("/(tabs)")}
         onRetry={reload}
       >
@@ -129,8 +131,8 @@ export default function WorkoutCompleteScreen() {
               showsVerticalScrollIndicator={false}
             >
               <View style={styles.header}>
-                <Text style={styles.kicker}>SESSION COMPLETE</Text>
-                <Text style={styles.title}>You showed up.</Text>
+                <Text style={styles.kicker}>{t("workoutDone.kicker")}</Text>
+                <Text style={styles.title}>{t("workoutDone.title")}</Text>
                 <Text style={styles.sub} numberOfLines={2}>
                   {session.title}
                 </Text>
@@ -166,12 +168,12 @@ export default function WorkoutCompleteScreen() {
                     <Share2 color={colors.black} size={20} />
                   )}
                   <Text style={styles.shareBtnText}>
-                    {sharing ? "Preparing story…" : "Add to Instagram Story"}
+                    {sharing ? t("workoutDone.preparing") : t("workoutDone.addToStory")}
                   </Text>
                 </Pressable>
 
                 <Button
-                  label="Back to home  →"
+                  label={t("workoutDone.backHome")}
                   variant="surface"
                   onPress={() => router.replace("/(tabs)")}
                 />
@@ -185,7 +187,7 @@ export default function WorkoutCompleteScreen() {
                     }
                     style={styles.linkBtn}
                   >
-                    <Text style={styles.linkBtnText}>View program</Text>
+                    <Text style={styles.linkBtnText}>{t("workoutDone.viewProgram")}</Text>
                   </Pressable>
                 ) : null}
               </View>

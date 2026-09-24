@@ -1,5 +1,6 @@
 import { BrandMark } from "@/src/components/ui/BrandMark";
 import { Button } from "@/src/components/ui/Button";
+import { useT } from "@/src/i18n";
 import { colors, fonts, radii, spacing } from "@/src/theme";
 import {
   Bell,
@@ -33,13 +34,13 @@ const TONE_ICON: Record<EmptyTone, LucideIcon> = {
   missing: UserX,
 };
 
-const TONE_KICKER: Partial<Record<EmptyTone, string>> = {
-  training: "YOUR WEEK",
-  programs: "CATALOG",
-  creators: "COACHES",
-  search: "SEARCH",
-  studio: "STUDIO",
-  notifications: "INBOX",
+const TONE_KICKER_KEY: Partial<Record<EmptyTone, string>> = {
+  training: "state.kickerTraining",
+  programs: "state.kickerPrograms",
+  creators: "state.kickerCreators",
+  search: "state.kickerSearch",
+  studio: "state.kickerStudio",
+  notifications: "state.kickerNotifications",
 };
 
 type Props = {
@@ -64,8 +65,10 @@ export function EmptyState({
   secondaryLabel,
   onSecondary,
 }: Props) {
+  const t = useT();
   const Icon = TONE_ICON[tone];
-  const kicker = TONE_KICKER[tone];
+  const kickerKey = TONE_KICKER_KEY[tone];
+  const kicker = kickerKey ? t(kickerKey) : undefined;
   const isTraining = tone === "training" && !compact;
 
   return (

@@ -5,18 +5,20 @@ import { brand } from "@/src/lib/brand";
 import { colors, fonts, radii, spacing } from "@/src/theme";
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
+import { useT } from "@/src/i18n";
 
 export default function SubscriptionsScreen() {
+  const t = useT();
   return (
     <Screen>
       <View style={styles.top}>
         <BackButton />
-        <Text style={styles.title}>Subscriptions</Text>
+        <Text style={styles.title}>{t("screens.subscriptions")}</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.badge}>ACTIVE</Text>
+        <Text style={styles.badge}>{t("screens.active")}</Text>
         <Text style={styles.plan}>Pro Yearly</Text>
         <Text style={styles.meta}>Renews Jun 20, 2027 · €119/year</Text>
       </View>

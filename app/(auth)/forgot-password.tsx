@@ -9,8 +9,10 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { Alert, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useT } from "@/src/i18n";
 
 export default function ForgotPasswordScreen() {
+  const t = useT();
   const insets = useSafeAreaInsets();
   const { resetPassword } = useAuth();
   const [email, setEmail] = useState("");
@@ -19,14 +21,14 @@ export default function ForgotPasswordScreen() {
 
   const onSend = async () => {
     if (!email.trim()) {
-      Alert.alert("Email required", "Enter the email for your account.");
+      Alert.alert(t("authExtra.emailRequired"), t("authExtra.enterAccountEmail"));
       return;
     }
     setBusy(true);
     const { error } = await resetPassword(email.trim());
     setBusy(false);
     if (error) {
-      Alert.alert("Could not send link", error);
+      Alert.alert(t("authExtra.couldNotSend"), error);
       return;
     }
     setSent(true);
@@ -48,7 +50,7 @@ export default function ForgotPasswordScreen() {
       </Text>
 
       <TextField
-        placeholder="Phone / Email"
+        placeholder={t("auth.emailPlaceholder")}
         autoCapitalize="none"
         keyboardType="email-address"
         value={email}
@@ -58,7 +60,7 @@ export default function ForgotPasswordScreen() {
       />
 
       <Button
-        label={sent ? "Link sent  →" : "Send reset link  →"}
+        label={sent ? t("authExtra.linkSent") : t("authExtra.sendReset")}
         variant="accent"
         loading={busy}
         disabled={busy}

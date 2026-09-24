@@ -2,6 +2,7 @@ import { BackButton } from "@/src/components/ui/BackButton";
 import { QueryGate } from "@/src/components/ui/QueryGate";
 import { Screen } from "@/src/components/ui/Screen";
 import { useCatalog } from "@/src/hooks/useCatalog";
+import { useT } from "@/src/i18n";
 import { colors, fonts, radii, spacing } from "@/src/theme";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -10,6 +11,7 @@ import { Search } from "lucide-react-native";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 
 export default function ProgramsScreen() {
+  const t = useT();
   const { programs, loading, error, refresh, refreshing, online } = useCatalog();
 
   return (
@@ -17,8 +19,8 @@ export default function ProgramsScreen() {
       <View style={styles.top}>
         <BackButton onPress={() => router.push("/(tabs)")} />
         <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={styles.title}>PROGRAMS</Text>
-          <Text style={styles.sub}>Choose your path. Build your discipline.</Text>
+          <Text style={styles.title}>{t("programsTab.title")}</Text>
+          <Text style={styles.sub}>{t("programsTab.sub")}</Text>
         </View>
         <Pressable style={styles.searchBtn} onPress={() => router.push("/search")}>
           <Search color={colors.white} size={18} />
@@ -29,11 +31,11 @@ export default function ProgramsScreen() {
         error={error}
         empty={programs.length === 0}
         emptyTone="programs"
-        emptyTitle="No programs yet"
-        emptyMessage="When creators publish camps and drill packs, they'll land here."
-        emptyActionLabel="Refresh"
+        emptyTitle={t("programsTab.emptyTitle")}
+        emptyMessage={t("programsTab.emptyMessage")}
+        emptyActionLabel={t("programsTab.refresh")}
         emptyOnAction={refresh}
-        emptySecondaryLabel="Browse creators"
+        emptySecondaryLabel={t("programsTab.browseCreators")}
         emptyOnSecondary={() => router.push("/(tabs)/creators")}
         onRetry={refresh}
         offline={!online}

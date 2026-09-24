@@ -10,6 +10,7 @@ import { router, useFocusEffect } from "expo-router";
 import { BadgeCheck, ChevronRight } from "lucide-react-native";
 import { useCallback, useMemo, useState } from "react";
 import {
+import { useT } from "@/src/i18n";
   ActivityIndicator,
   Pressable,
   ScrollView,
@@ -19,6 +20,7 @@ import {
 } from "react-native";
 
 export default function FollowingScreen() {
+  const t = useT();
   const { user } = useAuth();
   const { creators, loading: catalogLoading } = useCatalog();
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
@@ -51,7 +53,7 @@ export default function FollowingScreen() {
     <Screen>
       <View style={styles.top}>
         <BackButton />
-        <Text style={styles.title}>Following</Text>
+        <Text style={styles.title}>{t("creator.followingTitle")}</Text>
         <View style={{ width: 40 }} />
       </View>
       <Text style={styles.sub}>Creators you follow — train with their programs anytime.</Text>
@@ -61,9 +63,9 @@ export default function FollowingScreen() {
       ) : list.length === 0 ? (
         <EmptyState
           tone="creators"
-          title="Not following anyone yet"
-          message="Browse creators and tap Follow to build your corner."
-          actionLabel="Browse creators  →"
+          title={t("creator.emptyFollowing")}
+          message={t("creator.emptyFollowingBody")}
+          actionLabel={t("creator.browseCreators")}
           onAction={() => router.push("/(tabs)/creators")}
         />
       ) : (

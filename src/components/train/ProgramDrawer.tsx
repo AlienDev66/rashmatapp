@@ -1,5 +1,6 @@
 import { BrandMark } from "@/src/components/ui/BrandMark";
 import type { Enrollment } from "@/src/data/progress";
+import { useT } from "@/src/i18n";
 import type { Program } from "@/src/types";
 import { colors, fonts, radii, spacing } from "@/src/theme";
 import { Check, ChevronRight, BookOpen, ClipboardList, LayoutGrid, Trophy, X } from "lucide-react-native";
@@ -47,6 +48,7 @@ export function ProgramDrawer({
   onOpenLogs,
   onOpenAchievements,
 }: Props) {
+  const t = useT();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const panelW = Math.min(320, width * 0.82);
@@ -91,11 +93,11 @@ export function ProgramDrawer({
               <X color={colors.white} size={20} />
             </Pressable>
           </View>
-          <Text style={styles.kicker}>YOUR CAMPS</Text>
+          <Text style={styles.kicker}>{t("train.drawerCamps")}</Text>
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
             {enrolledPrograms.length === 0 ? (
-              <Text style={styles.empty}>No enrolled programs yet.</Text>
+              <Text style={styles.empty}>{t("train.drawerEmpty")}</Text>
             ) : (
               enrolledPrograms.map(({ program, enrollment }) => {
                 const active = program.id === activeProgramId;
@@ -113,7 +115,10 @@ export function ProgramDrawer({
                         {program.title}
                       </Text>
                       <Text style={styles.progMeta}>
-                        Day {enrollment.currentDay} · {enrollment.progressPct}%
+                        {t("train.drawerDayMeta", {
+                          day: enrollment.currentDay,
+                          pct: enrollment.progressPct,
+                        })}
                       </Text>
                     </View>
                     {active ? <Check color={colors.accent} size={18} /> : null}
@@ -124,10 +129,12 @@ export function ProgramDrawer({
 
             {activeProgramId ? (
               <>
-                <Text style={[styles.kicker, { marginTop: 16 }]}>THIS PROGRAM</Text>
+                <Text style={[styles.kicker, { marginTop: 16 }]}>
+                  {t("train.drawerThisProgram")}
+                </Text>
                 <DrawerLink
                   icon={<Trophy color={colors.accent} size={18} />}
-                  label="My progress"
+                  label={t("train.drawerProgress")}
                   onPress={() => {
                     onOpenProgress(activeProgramId);
                     onClose();
@@ -135,7 +142,7 @@ export function ProgramDrawer({
                 />
                 <DrawerLink
                   icon={<LayoutGrid color={colors.accent} size={18} />}
-                  label="Program overview"
+                  label={t("train.drawerOverview")}
                   onPress={() => {
                     onOpenOverview(activeProgramId);
                     onClose();
@@ -146,11 +153,13 @@ export function ProgramDrawer({
 
             {onOpenLibrary || onOpenLogs || onOpenAchievements ? (
               <>
-                <Text style={[styles.kicker, { marginTop: 16 }]}>LEARN</Text>
+                <Text style={[styles.kicker, { marginTop: 16 }]}>
+                  {t("train.drawerLearn")}
+                </Text>
                 {onOpenAchievements ? (
                   <DrawerLink
                     icon={<Trophy color={colors.accent} size={18} />}
-                    label="Achievements"
+                    label={t("train.drawerAchievements")}
                     onPress={() => {
                       onOpenAchievements();
                       onClose();
@@ -160,7 +169,7 @@ export function ProgramDrawer({
                 {onOpenLibrary ? (
                   <DrawerLink
                     icon={<BookOpen color={colors.accent} size={18} />}
-                    label="Rules library"
+                    label={t("train.drawerLibrary")}
                     onPress={() => {
                       onOpenLibrary();
                       onClose();
@@ -170,7 +179,7 @@ export function ProgramDrawer({
                 {onOpenLogs ? (
                   <DrawerLink
                     icon={<ClipboardList color={colors.accent} size={18} />}
-                    label="Workout logs"
+                    label={t("train.drawerLogs")}
                     onPress={() => {
                       onOpenLogs();
                       onClose();
@@ -182,10 +191,12 @@ export function ProgramDrawer({
 
             {isCreator && onOpenStudio ? (
               <>
-                <Text style={[styles.kicker, { marginTop: 16 }]}>CREATOR</Text>
+                <Text style={[styles.kicker, { marginTop: 16 }]}>
+                  {t("train.drawerCreator")}
+                </Text>
                 <DrawerLink
                   icon={<LayoutGrid color={colors.accent} size={18} />}
-                  label="Studio"
+                  label={t("train.drawerStudio")}
                   onPress={() => {
                     onOpenStudio();
                     onClose();

@@ -8,8 +8,10 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useT } from "@/src/i18n";
 
 export default function CreatorProgramsScreen() {
+  const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { creators, programs, loading, error, refresh, online } = useCatalog();
   const creator = creators.find((c) => c.id === id) ?? creators[0];
@@ -19,11 +21,11 @@ export default function CreatorProgramsScreen() {
     <Screen padded={false}>
       <View style={[styles.top, { paddingHorizontal: spacing.lg }]}>
         <BackButton />
-        <Text style={styles.title}>Programs</Text>
+        <Text style={styles.title}>{t("creatorProgramsScreen.title")}</Text>
         <View style={{ width: 40 }} />
       </View>
       <Text style={[styles.sub, { paddingHorizontal: spacing.lg }]}>
-        All programs by {creator?.name ?? "…"}
+        {t("creatorProgramsScreen.sub", { name: creator?.name ?? "…" })}
       </Text>
 
       <QueryGate
@@ -36,9 +38,9 @@ export default function CreatorProgramsScreen() {
         {list.length === 0 ? (
           <EmptyState
             tone="programs"
-            title="No programs yet"
-            message="This creator hasn’t published a camp or drill pack."
-            actionLabel="Back"
+            title={t("creatorProgramsScreen.empty")}
+            message={t("creatorProgramsScreen.emptyBody")}
+            actionLabel={t("common.back")}
             onAction={() => router.back()}
           />
         ) : (

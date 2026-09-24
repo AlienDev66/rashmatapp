@@ -9,8 +9,10 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { Alert, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useT } from "@/src/i18n";
 
 export default function SignUpScreen() {
+  const t = useT();
   const insets = useSafeAreaInsets();
   const { signUpWithEmail } = useAuth();
   const [email, setEmail] = useState("");
@@ -20,15 +22,15 @@ export default function SignUpScreen() {
 
   const onSignUp = async () => {
     if (!email.trim() || !password) {
-      Alert.alert("Missing fields", "Enter email and password.");
+      Alert.alert(t("authExtra.missingFields"), t("authExtra.enterEmailPassword"));
       return;
     }
     if (password.length < 8) {
-      Alert.alert("Weak password", "Use at least 8 characters.");
+      Alert.alert(t("authExtra.weakPassword"), t("authExtra.minChars"));
       return;
     }
     if (password !== confirm) {
-      Alert.alert("Passwords don’t match", "Confirm your password.");
+      Alert.alert(t("authExtra.passwordsMismatch"), t("authExtra.confirmYourPassword"));
       return;
     }
     setBusy(true);
@@ -38,7 +40,7 @@ export default function SignUpScreen() {
     );
     setBusy(false);
     if (error) {
-      Alert.alert("Sign up failed", error);
+      Alert.alert(t("authExtra.signUpFailed"), error);
       return;
     }
     if (needsEmailConfirm) {
@@ -72,7 +74,7 @@ export default function SignUpScreen() {
 
       <View style={styles.form}>
         <TextField
-          placeholder="Phone / Email"
+          placeholder={t("auth.emailPlaceholder")}
           autoCapitalize="none"
           keyboardType="email-address"
           value={email}
@@ -80,14 +82,14 @@ export default function SignUpScreen() {
           leftIcon={<EmailIcon size={20} color={colors.white} />}
         />
         <TextField
-          placeholder="Password"
+          placeholder={t("auth.passwordPlaceholder")}
           secureTextEntry
           value={password}
           onChangeText={setPassword}
           leftIcon={<PasswordIcon size={20} color={colors.white} />}
         />
         <TextField
-          placeholder="Confirm password"
+          placeholder={t("authExtra.confirmPassword")}
           secureTextEntry
           value={confirm}
           onChangeText={setConfirm}

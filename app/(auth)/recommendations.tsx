@@ -10,10 +10,12 @@ import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useT } from "@/src/i18n";
 
 const FLAGSHIP_ID = "mat-foundations";
 
 export default function RecommendationsScreen() {
+  const t = useT();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { programs, sessions } = useCatalog();
@@ -39,7 +41,7 @@ export default function RecommendationsScreen() {
 
   const startCamp = async (programId: string) => {
     if (!user) {
-      Alert.alert("Sign in required", "Create an account to start this camp.");
+      Alert.alert(t("home.signInRequired"), t("home.signInBody"));
       router.push("/(auth)/sign-in");
       return;
     }
@@ -58,7 +60,7 @@ export default function RecommendationsScreen() {
         router.replace(`/program/${programId}`);
       }
     } catch (e) {
-      Alert.alert("Could not start", e instanceof Error ? e.message : "Try again.");
+      Alert.alert(t("home.couldNotStart"), e instanceof Error ? e.message : t("home.tryAgain"));
     } finally {
       setBusyId(null);
     }
@@ -75,11 +77,11 @@ export default function RecommendationsScreen() {
       {picks.length === 0 ? (
         <EmptyState
           tone="programs"
-          title="No programs yet"
-          message="The catalog is empty right now. Jump in and explore when camps go live."
-          actionLabel="Enter RASHMAT  →"
+          title={t("authExtra.noProgramsYet")}
+          message={t("authExtra.catalogEmpty")}
+          actionLabel={t("authExtra.enterRashmat")}
           onAction={() => router.replace("/(tabs)")}
-          secondaryLabel="Browse creators"
+          secondaryLabel={t("programsTab.browseCreators")}
           onSecondary={() => router.replace("/(tabs)/creators")}
         />
       ) : (
@@ -111,10 +113,10 @@ export default function RecommendationsScreen() {
               <Button
                 label={
                   busyId === primary.id
-                    ? "Starting…"
+                    ? t("authExtra.starting")
                     : primary.isPremium
-                      ? "Unlock first camp  →"
-                      : "Start this camp  →"
+                      ? t("authExtra.unlockFirst")
+                      : t("home.startCampCta")
                 }
                 variant="accent"
                 loading={busyId === primary.id}
@@ -122,7 +124,7 @@ export default function RecommendationsScreen() {
                 onPress={() => void startCamp(primary.id)}
               />
               <Button
-                label="Browse all programs"
+                label={t("home.browseAllPrograms")}
                 variant="soft"
                 disabled={!!busyId}
                 onPress={() => router.replace("/(tabs)/programs")}

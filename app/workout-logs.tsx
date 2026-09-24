@@ -9,8 +9,10 @@ import { Image } from "expo-image";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useT } from "@/src/i18n";
 
 export default function WorkoutLogsScreen() {
+  const t = useT();
   const { user } = useAuth();
   const { sessions } = useCatalog();
   const [rows, setRows] = useState<
@@ -36,7 +38,7 @@ export default function WorkoutLogsScreen() {
     <Screen>
       <View style={styles.top}>
         <BackButton />
-        <Text style={styles.title}>Workout logs</Text>
+        <Text style={styles.title}>{t("logs.title")}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -45,9 +47,9 @@ export default function WorkoutLogsScreen() {
       ) : rows.length === 0 ? (
         <EmptyState
           tone="training"
-          title="No sessions logged"
-          message="Finish a session to build your training history."
-          actionLabel="Back to hub  →"
+          title={t("logs.empty")}
+          message={t("logs.emptyBody")}
+          actionLabel={t("logs.backHub")}
           onAction={() => router.replace("/(tabs)")}
         />
       ) : (
@@ -72,8 +74,8 @@ export default function WorkoutLogsScreen() {
                   </Text>
                   <Text style={styles.rowMeta}>
                     {new Date(r.completedAt).toLocaleDateString()}
-                    {mins != null ? ` · ${mins} min` : ""}
-                    {` · +${r.xpEarned} XP`}
+                    {mins != null ? ` · ${t("logs.minutes", { n: mins })}` : ""}
+                    {` · ${t("logs.xpEarned", { n: r.xpEarned })}`}
                   </Text>
                 </View>
               </Pressable>

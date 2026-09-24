@@ -1,4 +1,5 @@
 import { BrandMark } from "@/src/components/ui/BrandMark";
+import { useT } from "@/src/i18n";
 import { brand } from "@/src/lib/brand";
 import { colors, fonts } from "@/src/theme";
 import { Image } from "expo-image";
@@ -31,6 +32,7 @@ export const WorkoutStoryCard = forwardRef<View, Props>(function WorkoutStoryCar
   { stats, width = 280 },
   ref,
 ) {
+  const t = useT();
   const height = Math.round((width * 16) / 9);
   const s = width / 280; // scale from design base
 
@@ -93,7 +95,7 @@ export const WorkoutStoryCard = forwardRef<View, Props>(function WorkoutStoryCar
               {brand.name}
             </Text>
             <Text style={[styles.date, { fontSize: 10 * s, marginTop: 2 * s }]}>
-              {stats.dateLabel ?? "TRAINING DAY"}
+              {stats.dateLabel ?? t("story.trainingDay")}
             </Text>
           </View>
         </View>
@@ -106,7 +108,7 @@ export const WorkoutStoryCard = forwardRef<View, Props>(function WorkoutStoryCar
               { fontSize: 11 * s, letterSpacing: 2.4 * s },
             ]}
           >
-            SESSION COMPLETE
+            {t("story.sessionComplete")}
           </Text>
           <Text
             style={[
@@ -123,7 +125,7 @@ export const WorkoutStoryCard = forwardRef<View, Props>(function WorkoutStoryCar
               { fontSize: 12 * s, lineHeight: 16 * s, marginTop: 4 * s },
             ]}
           >
-            Showed up. Logged the work. On to the next round.
+            {t("story.tagline")}
           </Text>
         </View>
 
@@ -154,9 +156,9 @@ export const WorkoutStoryCard = forwardRef<View, Props>(function WorkoutStoryCar
 
         {/* Stats */}
         <View style={[styles.statsRow, { gap: 8 * s }]}>
-          <StatPill value={`${stats.minutes}`} label="MIN" s={s} accent />
-          <StatPill value={`${stats.sets}`} label="SETS" s={s} />
-          <StatPill value={`${stats.drills}`} label="DRILLS" s={s} />
+          <StatPill value={`${stats.minutes}`} label={t("story.min")} s={s} accent />
+          <StatPill value={`${stats.sets}`} label={t("story.sets")} s={s} />
+          <StatPill value={`${stats.drills}`} label={t("story.drills")} s={s} />
         </View>
 
         {/* Footer */}
@@ -166,7 +168,7 @@ export const WorkoutStoryCard = forwardRef<View, Props>(function WorkoutStoryCar
             {brand.social.handle}
           </Text>
           <Text style={[styles.domain, { fontSize: 11 * s }]}>
-            Train with structure · {brand.domain}
+            {t("story.footer")} · {brand.domain}
           </Text>
         </View>
       </View>

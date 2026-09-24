@@ -34,6 +34,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useT } from "@/src/i18n";
 
 function formatClock(totalSeconds: number) {
   const m = Math.floor(totalSeconds / 60);
@@ -44,6 +45,7 @@ function formatClock(totalSeconds: number) {
 type Phase = "work" | "rest";
 
 export default function SessionPlayerScreen() {
+  const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: session, loading, error, reload } = useWorkoutSession(id);
   const { refreshProfile } = useAuth();
@@ -99,7 +101,7 @@ export default function SessionPlayerScreen() {
     if (phase === "rest") {
       if (!isLastSet) {
         return {
-          title: exercise?.name ?? "Drill",
+          title: exercise?.name ?? t("session.drill"),
           meta: `${isRounds ? "Round" : "Set"} ${setIndex + 2} of ${totalSets}`,
         };
       }
@@ -109,18 +111,18 @@ export default function SessionPlayerScreen() {
           meta: formatRepsLabel(parseRepScheme(nextExercise.reps)[0] ?? 8, nextExercise.reps),
         };
       }
-      return { title: "Session complete", meta: "Finish & log XP" };
+      return { title: t("session.sessionComplete"), meta: t("session.finishLogXp") };
     }
     if (!isLastSet) {
       return {
-        title: "Next set",
+        title: t("session.nextSet"),
         meta: formatRepsLabel(scheme[setIndex + 1] ?? targetReps, exercise?.reps),
       };
     }
     if (nextExercise) {
-      return { title: nextExercise.name, meta: "Next drill" };
+      return { title: nextExercise.name, meta: t("session.nextDrill") };
     }
-    return { title: "Finish session", meta: "Last set" };
+    return { title: t("session.finishSession"), meta: t("session.lastSet") };
   }, [
     phase,
     isLastSet,
@@ -326,16 +328,16 @@ export default function SessionPlayerScreen() {
   };
 
   const onExit = () => {
-    Alert.alert("Leave session?", "Progress is saved — you can resume later.", [
-      { text: "Keep training", style: "cancel" },
+    Alert.alert(t("session.leaveTitle"), t("session.leaveBody"), [
+      { text: t("sessionUi.keepTraining"), style: "cancel" },
       {
-        text: "Save & exit",
+        text: t("sessionUi.saveExit"),
         onPress: () => {
           void persist("in_progress").then(() => router.back());
         },
       },
       {
-        text: "Discard",
+        text: t("sessionUi.discard"),
         style: "destructive",
         onPress: () => {
           void persist("abandoned").then(() => router.back());
@@ -353,7 +355,7 @@ export default function SessionPlayerScreen() {
         error={error}
         empty={!session || !exercise}
         emptyTone="training"
-        emptyTitle="Session not found"
+        emptyTitle={t("session.notFound")}
         emptyMessage="This drill isn’t available. Go back and pick another day."
         emptyActionLabel="Back"
         emptyOnAction={() => router.back()}
@@ -406,7 +408,7 @@ export default function SessionPlayerScreen() {
                     {!playing ? (
                       <View style={styles.pauseBadge}>
                         <Pause color={colors.white} fill={colors.white} size={28} />
-                        <Text style={styles.pauseText}>Paused · tap to play</Text>
+                        <Text style={styles.pauseText}>{t("session.paused")}</Text>
                       </View>
                     ) : null}
                   </Pressable>
@@ -466,7 +468,7 @@ export default function SessionPlayerScreen() {
               </>
             ) : (
               <View style={styles.restCenter}>
-                <Text style={styles.restKicker}>RECOVER</Text>
+                <Text style={styles.restKicker}>{t("sessionUi.recover")}</Text>
                 <View style={styles.restRing}>
                   <View
                     style={[
@@ -502,7 +504,7 @@ export default function SessionPlayerScreen() {
                     </Text>
                   </Pressable>
                   <View style={styles.logChip}>
-                    <Text style={styles.logLabel}>{isRounds ? "Rounds" : "Reps"}</Text>
+                    <Text style={styles.logLabel}>{isRounds ? t("session.rounds") : t("session.reps")}</Text>
                     <TextInput
                       style={styles.logInput}
                       value={repsInput}
@@ -515,7 +517,7 @@ export default function SessionPlayerScreen() {
                     style={styles.noteInput}
                     value={note}
                     onChangeText={setNote}
-                    placeholder="Note"
+                    placeholder={t("session.note")}
                     placeholderTextColor={colors.textDim}
                   />
                   <Text style={styles.prHint}>
@@ -531,7 +533,7 @@ export default function SessionPlayerScreen() {
               <View style={styles.dockActions}>
                 {phase === "rest" ? (
                   <Pressable style={styles.secondaryBtn} onPress={skipRest}>
-                    <Text style={styles.secondaryBtnText}>Skip rest</Text>
+                    <Text style={styles.secondaryBtnText}>{t("sessionUi.skipRest")}</Text>
                   </Pressable>
                 ) : (
                   <View style={styles.nextPreview}>
@@ -592,7 +594,7 @@ export default function SessionPlayerScreen() {
                   <Text style={styles.tipTitle}>{exercise.name}</Text>
                   <Text style={styles.tipBody}>{tipForDrill(exercise.name, exercise.reps)}</Text>
                   <Pressable style={styles.tipClose} onPress={() => setShowTip(false)}>
-                    <Text style={styles.tipCloseText}>Got it</Text>
+                    <Text style={styles.tipCloseText}>{t("sessionUi.gotIt")}</Text>
                   </Pressable>
                 </View>
               </View>

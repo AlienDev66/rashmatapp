@@ -7,9 +7,11 @@ import { colors, fonts, radii } from "@/src/theme";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
+import { useT } from "@/src/i18n";
 
 /** Creator Studio: who follows your creator profile. */
 export default function StudioFollowersScreen() {
+  const t = useT();
   const [rows, setRows] = useState<FollowerRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,21 +37,19 @@ export default function StudioFollowersScreen() {
     <Screen>
       <View style={styles.top}>
         <BackButton />
-        <Text style={styles.title}>Followers</Text>
+        <Text style={styles.title}>{t("studioScreens.followersTitle")}</Text>
         <View style={{ width: 40 }} />
       </View>
-      <Text style={styles.sub}>
-        Athletes following your creator profile — separate from students who unlocked a camp.
-      </Text>
+      <Text style={styles.sub}>{t("studioScreens.followersSub")}</Text>
 
       {loading ? <ActivityIndicator color={colors.accent} style={{ marginTop: 24 }} /> : null}
 
       {!loading && rows.length === 0 ? (
         <EmptyState
           tone="creators"
-          title="No followers yet"
-          message="Share your programs — followers appear when athletes tap Follow on your profile."
-          actionLabel="My programs  →"
+          title={t("studioScreens.noFollowers")}
+          message={t("studioScreens.noFollowersBody")}
+          actionLabel={t("studioScreens.myPrograms")}
           onAction={() => router.push("/studio")}
         />
       ) : (
@@ -59,7 +59,11 @@ export default function StudioFollowersScreen() {
           contentContainerStyle={{ paddingBottom: 40, gap: 10 }}
           ListHeaderComponent={
             !loading ? (
-              <Text style={styles.count}>{rows.length} follower{rows.length === 1 ? "" : "s"}</Text>
+              <Text style={styles.count}>
+                {rows.length === 1
+                  ? t("studioScreens.followerOne")
+                  : t("studioScreens.followerMany", { n: rows.length })}
+              </Text>
             ) : null
           }
           renderItem={({ item }) => (
@@ -68,7 +72,9 @@ export default function StudioFollowersScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.name}>{item.fullName}</Text>
                 <Text style={styles.meta}>
-                  Since {new Date(item.followedAt).toLocaleDateString()}
+                  {t("followersScreen.since", {
+                    date: new Date(item.followedAt).toLocaleDateString(),
+                  })}
                 </Text>
               </View>
             </View>

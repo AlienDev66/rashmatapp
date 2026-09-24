@@ -4,25 +4,27 @@ import { Screen } from "@/src/components/ui/Screen";
 import { colors, fonts } from "@/src/theme";
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
+import { useT } from "@/src/i18n";
 
 /**
  * Push / in-app notifications are not wired yet.
  * Keep this honest — no fake reminders that look like real product data.
  */
 export default function NotificationsScreen() {
+  const t = useT();
   return (
     <Screen>
       <View style={styles.top}>
         <BackButton />
-        <Text style={styles.title}>Notifications</Text>
+        <Text style={styles.title}>{t("screens.notifications")}</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <EmptyState
         tone="notifications"
-        title="You're all caught up"
-        message="Session reminders and creator drops will land here once push is enabled."
-        actionLabel="Back to training  →"
+        title={t("screens.notifEmptyTitle")}
+        message={t("screens.notifEmptyBody")}
+        actionLabel={t("screens.backTraining")}
         onAction={() => router.back()}
         secondaryLabel="Notification settings"
         onSecondary={() => router.push("/settings")}

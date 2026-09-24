@@ -5,8 +5,10 @@ import { getFederation, getGuide } from "@/src/data/rulesLibrary";
 import { colors, fonts, radii, spacing } from "@/src/theme";
 import { router, useLocalSearchParams } from "expo-router";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useT } from "@/src/i18n";
 
 export default function LibraryGuideScreen() {
+  const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
   const guide = getGuide(id ?? "");
   const federation = guide ? getFederation(guide.federationId) : null;
@@ -16,14 +18,14 @@ export default function LibraryGuideScreen() {
       <Screen>
         <View style={styles.top}>
           <BackButton />
-          <Text style={styles.topTitle}>Guide</Text>
+          <Text style={styles.topTitle}>{t("rules.guide")}</Text>
           <View style={{ width: 40 }} />
         </View>
         <EmptyState
           tone="missing"
-          title="Guide not found"
-          message="This article may have been moved."
-          actionLabel="Back to library  →"
+          title={t("rules.guideNotFound")}
+          message={t("rules.guideNotFoundBody")}
+          actionLabel={t("rules.backToLibrary")}
           onAction={() => router.replace("/library")}
         />
       </Screen>
@@ -35,7 +37,7 @@ export default function LibraryGuideScreen() {
       <View style={styles.top}>
         <BackButton />
         <Text style={styles.topTitle} numberOfLines={1}>
-          {federation?.shortName ?? "Guide"}
+          {federation?.shortName ?? t("rules.guide")}
         </Text>
         <View style={{ width: 40 }} />
       </View>
@@ -46,9 +48,9 @@ export default function LibraryGuideScreen() {
         <Text style={styles.summary}>{guide.summary}</Text>
 
         <View style={styles.tags}>
-          {guide.tags.map((t) => (
-            <View key={t} style={styles.tag}>
-              <Text style={styles.tagText}>{t}</Text>
+          {guide.tags.map((tag) => (
+            <View key={tag} style={styles.tag}>
+              <Text style={styles.tagText}>{tag}</Text>
             </View>
           ))}
         </View>
@@ -70,10 +72,7 @@ export default function LibraryGuideScreen() {
           </View>
         ))}
 
-        <Text style={styles.disclaimer}>
-          RASHMAT reference for training and prep. Confirm the official federation rulebook and
-          event packet for the season you compete in — they override this guide.
-        </Text>
+        <Text style={styles.disclaimer}>{t("rules.disclaimer")}</Text>
       </ScrollView>
     </Screen>
   );

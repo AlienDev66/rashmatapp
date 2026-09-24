@@ -11,8 +11,10 @@ import { colors, fonts, radii, spacing } from "@/src/theme";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronRight } from "lucide-react-native";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useT } from "@/src/i18n";
 
 export default function LibrarySportScreen() {
+  const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
   const sport = getSport(id ?? "");
   const feds = sport ? federationsForSport(sport.id as SportId) : [];
@@ -23,14 +25,14 @@ export default function LibrarySportScreen() {
       <Screen>
         <View style={styles.top}>
           <BackButton />
-          <Text style={styles.title}>Library</Text>
+          <Text style={styles.title}>{t("screens.library")}</Text>
           <View style={{ width: 40 }} />
         </View>
         <EmptyState
           tone="missing"
-          title="Sport not found"
-          message="That library section doesn’t exist."
-          actionLabel="Back to library  →"
+          title={t("rules.sportNotFound")}
+          message={t("rules.sportNotFoundBody")}
+          actionLabel={t("rules.backToLibrary")}
           onAction={() => router.replace("/library")}
         />
       </Screen>
@@ -48,7 +50,7 @@ export default function LibrarySportScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <Text style={styles.blurb}>{sport.blurb}</Text>
 
-        <Text style={styles.section}>FEDERATIONS</Text>
+        <Text style={styles.section}>{t("rules.federations")}</Text>
         {feds.map((f) => (
           <Pressable
             key={f.id}
@@ -63,7 +65,7 @@ export default function LibrarySportScreen() {
           </Pressable>
         ))}
 
-        <Text style={[styles.section, { marginTop: 16 }]}>QUICK GUIDES</Text>
+        <Text style={[styles.section, { marginTop: 16 }]}>{t("rules.quickGuides")}</Text>
         {featured.map((g) => (
           <Pressable
             key={g.id}

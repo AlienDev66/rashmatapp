@@ -1,3 +1,4 @@
+import { useT } from "@/src/i18n";
 import { resolveVideoSource } from "@/src/lib/video";
 import { getOfflineVideoUri } from "@/src/lib/offlineVideo";
 import { colors, fonts } from "@/src/theme";
@@ -44,6 +45,7 @@ export function SessionVideo({
   onEnded,
   style,
 }: Props) {
+  const t = useT();
   const resolved = useMemo(
     () => resolveVideoSource({ muxPlaybackId, videoUrl, cacheKey }),
     [muxPlaybackId, videoUrl, cacheKey],
@@ -123,8 +125,8 @@ export function SessionVideo({
       ) : null}
       {status === "error" ? (
         <View style={styles.overlay} pointerEvents="none">
-          <Text style={styles.errorTitle}>Video unavailable</Text>
-          <Text style={styles.errorBody}>{errorMsg ?? "Try again."}</Text>
+          <Text style={styles.errorTitle}>{t("video.unavailable")}</Text>
+          <Text style={styles.errorBody}>{errorMsg ?? t("video.retryHint")}</Text>
         </View>
       ) : null}
     </View>

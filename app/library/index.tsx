@@ -5,13 +5,15 @@ import { colors, fonts, radii, spacing } from "@/src/theme";
 import { router } from "expo-router";
 import { BookOpen, ChevronRight, Search } from "lucide-react-native";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useT } from "@/src/i18n";
 
 export default function LibraryHomeScreen() {
+  const t = useT();
   return (
     <Screen>
       <View style={styles.top}>
         <BackButton />
-        <Text style={styles.title}>Library</Text>
+        <Text style={styles.title}>{t("screens.library")}</Text>
         <Pressable style={styles.iconBtn} onPress={() => router.push("/library/search")}>
           <Search color={colors.white} size={18} />
         </Pressable>
@@ -20,14 +22,11 @@ export default function LibraryHomeScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.hero}>
           <BookOpen color={colors.accent} size={22} />
-          <Text style={styles.heroTitle}>Rules & divisions</Text>
-          <Text style={styles.heroSub}>
-            Athlete reference for BJJ federations and boxing — not creator content. Official
-            rulebooks always win.
-          </Text>
+          <Text style={styles.heroTitle}>{t("screens.rulesDivisions")}</Text>
+          <Text style={styles.heroSub}>{t("rules.heroSub")}</Text>
         </View>
 
-        <Text style={styles.section}>SPORTS</Text>
+        <Text style={styles.section}>{t("screens.sports")}</Text>
         {sports.map((s) => (
           <Pressable
             key={s.id}

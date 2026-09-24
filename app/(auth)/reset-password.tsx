@@ -9,8 +9,10 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { Alert, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useT } from "@/src/i18n";
 
 export default function ResetPasswordScreen() {
+  const t = useT();
   const insets = useSafeAreaInsets();
   const { updatePassword, session } = useAuth();
   const [password, setPassword] = useState("");
@@ -19,7 +21,7 @@ export default function ResetPasswordScreen() {
 
   const onUpdate = async () => {
     if (password.length < 8) {
-      Alert.alert("Weak password", "Use at least 8 characters.");
+      Alert.alert(t("authExtra.weakPassword"), t("authExtra.minChars"));
       return;
     }
     if (password !== confirm) {
@@ -50,26 +52,26 @@ export default function ResetPasswordScreen() {
       style={[styles.root, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 }]}
     >
       <BackButton />
-      <Text style={styles.title}>Create new password</Text>
+      <Text style={styles.title}>{t("authExtra.resetTitle")}</Text>
       <Text style={styles.sub}>Use at least 8 characters. Then sign in with your new password.</Text>
 
       <View style={styles.form}>
         <TextField
-          placeholder="New password"
+          placeholder={t("authExtra.newPassword")}
           secureTextEntry
           value={password}
           onChangeText={setPassword}
           leftIcon={<PasswordIcon size={20} color={colors.white} />}
         />
         <TextField
-          placeholder="Confirm password"
+          placeholder={t("authExtra.confirmNewPassword")}
           secureTextEntry
           value={confirm}
           onChangeText={setConfirm}
           leftIcon={<PasswordIcon size={20} color={colors.white} />}
         />
         <Button
-          label="Update password  →"
+          label={t("authExtra.updatePassword")}
           variant="accent"
           loading={busy}
           disabled={busy}

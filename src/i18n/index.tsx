@@ -9,6 +9,10 @@ import {
   type ReactNode,
 } from "react";
 import { messages } from "./messages";
+import { appCatalog } from "./catalog";
+import { appCatalog2 } from "./catalog2";
+import { appCatalog3 } from "./catalog3";
+import { deepMergeMessages } from "./merge";
 import {
   detectLocale,
   normalizeLocale,
@@ -26,6 +30,15 @@ type I18nContextValue = {
 };
 
 const I18nContext = createContext<I18nContextValue | null>(null);
+
+function dictFor(locale: Locale): Record<string, unknown> {
+  return deepMergeMessages(
+    messages[locale] as unknown as Record<string, unknown>,
+    appCatalog[locale] as unknown as Record<string, unknown>,
+    appCatalog2[locale] as unknown as Record<string, unknown>,
+    appCatalog3[locale] as unknown as Record<string, unknown>,
+  );
+}
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>("en");
@@ -55,7 +68,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   const t = useCallback(
     (key: string, params?: Record<string, string | number>) =>
-      translate(messages[locale] as unknown as Record<string, unknown>, key, params),
+      translate(dictFor(locale), key, params),
     [locale],
   );
 

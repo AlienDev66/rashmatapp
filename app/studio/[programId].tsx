@@ -19,6 +19,7 @@ import { colors, fonts, radii } from "@/src/theme";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
+import { useT } from "@/src/i18n";
   Alert,
   Pressable,
   ScrollView,
@@ -28,6 +29,7 @@ import {
 } from "react-native";
 
 export default function StudioProgramDetailScreen() {
+  const t = useT();
   const { programId } = useLocalSearchParams<{ programId: string }>();
   const { user } = useAuth();
   const [program, setProgram] = useState<StudioProgram | null>(null);
@@ -62,8 +64,8 @@ export default function StudioProgramDetailScreen() {
       description: description.trim(),
     });
     setBusy(false);
-    if (error) Alert.alert("Save failed", error);
-    else Alert.alert("Saved", "Program details updated.");
+    if (error) Alert.alert(t("studioScreens.saveFailed"), error);
+    else Alert.alert(t("studioScreens.saved"), t("studioScreens.programUpdated"));
   };
 
   const onTogglePublish = async () => {
@@ -73,7 +75,7 @@ export default function StudioProgramDetailScreen() {
     const { error } = await publishProgram(programId, next);
     setBusy(false);
     if (error) {
-      Alert.alert("Publish failed", error);
+      Alert.alert(t("studioScreens.publishFailed"), error);
       return;
     }
     setProgram({ ...program, status: next ? "published" : "draft" });
@@ -84,11 +86,11 @@ export default function StudioProgramDetailScreen() {
     const day = sessions.length + 1;
     const { error, session } = await createSession({
       programId,
-      title: `Day ${day}`,
+      title: t("common.day", { n: day }),
       day,
     });
     if (error || !session) {
-      Alert.alert("Could not add session", error ?? "");
+      Alert.alert(t("studioScreens.couldNotAddSession"), error ?? "");
       return;
     }
     setSessions((prev) => [...prev, session]);
@@ -100,10 +102,10 @@ export default function StudioProgramDetailScreen() {
       <Screen>
         <View style={styles.top}>
           <BackButton />
-          <Text style={styles.title}>Program</Text>
+          <Text style={styles.title}>{t("studioScreens.programHeader")}</Text>
           <View style={{ width: 40 }} />
         </View>
-        <Text style={styles.meta}>Loading…</Text>
+        <Text style={styles.meta}>{t("common.loading")}</Text>
       </Screen>
     );
   }
@@ -112,32 +114,45 @@ export default function StudioProgramDetailScreen() {
     <Screen>
       <View style={styles.top}>
         <BackButton />
-        <Text style={styles.title}>Edit</Text>
+        <Text style={styles.title}>{t("studioScreens.edit")}</Text>
         <View style={{ width: 40 }} />
       </View>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-        <Text style={styles.badge}>{program.status === "published" ? "PUBLISHED" : "DRAFT"}</Text>
+        <Text style={styles.badge}>
+          {program.status === "published"
+            ? t("studioScreens.publishedBadge")
+            : t("studioScreens.draftBadge")}
+        </Text>
         <View style={styles.form}>
-          <TextField value={title} onChangeText={setTitle} placeholder="Title" />
-          <TextField value={description} onChangeText={setDescription} placeholder="Description" />
+          <TextField value={title} onChangeText={setTitle} placeholder={t("studioScreens.titlePlaceholder")} />
+          <TextField value={description} onChangeText={setDescription} placeholder={t("studioScreens.descriptionPlaceholder")} />
         </View>
-        <Button label={busy ? "…" : "Save details"} variant="surface" disabled={busy} onPress={() => void onSave()} />
         <Button
-          label={program.status === "published" ? "Unpublish" : "Publish  →"}
+          label={busy ? "…" : t("studioScreens.saveDetails")}
+          variant="surface"
+          disabled={busy}
+          onPress={() => void onSave()}
+        />
+        <Button
+          label={
+            program.status === "published"
+              ? t("studioScreens.unpublish")
+              : t("studioScreens.publish")
+          }
           variant="accent"
           disabled={busy}
           style={{ marginTop: 10 }}
           onPress={() => void onTogglePublish()}
         />
 
-        <Text style={styles.section}>SESSIONS</Text>
+        <Text style={styles.section}>{t("studioScreens.sessionsSection")}</Text>
         {sessions.length === 0 ? (
           <EmptyState
             compact
             tone="studio"
-            title="No sessions yet"
-            message="Add Day 1 to start building this program’s schedule."
-            actionLabel="Add session  →"
+            title={t("studioScreens.noSessionsYet")}
+            message={t("studioScreens.noSessionsYetBody")}
+            actionLabel={t("studioScreens.addSessionCta")}
             onAction={() => void onAddSession()}
           />
         ) : (
@@ -150,23 +165,28 @@ export default function StudioProgramDetailScreen() {
               }
             >
               <Text style={styles.rowTitle}>
-                Day {s.day}: {s.title}
+                {t("studioScreens.sessionRow", { day: s.day, title: s.title })}
               </Text>
               <Text style={styles.chev}>›</Text>
             </Pressable>
           ))
         )}
         {sessions.length > 0 ? (
-          <Button label="Add session" variant="ghost" onPress={() => void onAddSession()} style={{ marginTop: 8 }} />
+          <Button label={t("studioScreens.addSession")} variant="ghost" onPress={() => void onAddSession()} style={{ marginTop: 8 }} />
         ) : null}
 
-        <Text style={styles.section}>STUDENTS ({students.length})</Text>
+        <Text style={styles.section}>
+          {t("studioScreens.studentsCount", { n: students.length })}
+        </Text>
         {students.map((s) => (
           <View key={s.enrollment_id} style={styles.row}>
             <View style={{ flex: 1 }}>
               <Text style={styles.rowTitle}>{s.student_name}</Text>
               <Text style={styles.meta}>
-                {s.sessions_done} sessions · Day {s.current_day}
+                {t("studioScreens.studentSessionsMeta", {
+                  n: s.sessions_done,
+                  day: s.current_day,
+                })}
               </Text>
             </View>
             <Text style={styles.pct}>{s.progress_pct}%</Text>
@@ -176,8 +196,8 @@ export default function StudioProgramDetailScreen() {
           <EmptyState
             compact
             tone="studio"
-            title="No subscribers yet"
-            message="Athletes who unlock this program will show progress here."
+            title={t("studioScreens.noSubscribers")}
+            message={t("studioScreens.noSubscribersBody")}
           />
         ) : null}
       </ScrollView>

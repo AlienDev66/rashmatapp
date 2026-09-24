@@ -12,8 +12,10 @@ import { colors, fonts, radii, spacing } from "@/src/theme";
 import * as Clipboard from "expo-clipboard";
 import { useEffect, useState } from "react";
 import { Alert, Pressable, Share, StyleSheet, Text, View } from "react-native";
+import { useT } from "@/src/i18n";
 
 export default function ReferralsScreen() {
+  const t = useT();
   const [code, setCode] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -45,18 +47,18 @@ export default function ReferralsScreen() {
     <Screen>
       <View style={styles.top}>
         <BackButton />
-        <Text style={styles.title}>Invite partners</Text>
+        <Text style={styles.title}>{t("screens.invitePartners")}</Text>
         <View style={{ width: 40 }} />
       </View>
 
-      <Text style={styles.hero}>Invite a training partner</Text>
+      <Text style={styles.hero}>{t("screens.invitePartner")}</Text>
       <Text style={styles.sub}>
         Share your code. When they complete their first session, you unlock the Training Partner
         medal (+XP).
       </Text>
 
       <View style={styles.card}>
-        <Text style={styles.label}>Your code</Text>
+        <Text style={styles.label}>{t("screens.yourCode")}</Text>
         <Text style={styles.code}>{code ?? "…"}</Text>
         <View style={styles.row}>
           <Button label="Copy" variant="soft" onPress={() => void onCopy()} style={{ flex: 1 }} />
@@ -70,7 +72,7 @@ export default function ReferralsScreen() {
         </View>
       </View>
 
-      <Text style={styles.section}>Have a code?</Text>
+      <Text style={styles.section}>{t("screens.haveCode")}</Text>
       <TextField
         placeholder="Enter invite code"
         autoCapitalize="characters"

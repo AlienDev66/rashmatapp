@@ -2,6 +2,7 @@ import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { colors } from "@/src/theme";
 import { ErrorState } from "@/src/components/ui/ErrorState";
 import { EmptyState, type EmptyTone } from "@/src/components/ui/EmptyState";
+import { useT } from "@/src/i18n";
 import type { ReactNode } from "react";
 
 type Props = {
@@ -24,7 +25,7 @@ export function QueryGate({
   loading,
   error,
   empty,
-  emptyTitle = "Nothing here yet",
+  emptyTitle,
   emptyMessage,
   emptyTone = "default",
   emptyActionLabel,
@@ -35,6 +36,8 @@ export function QueryGate({
   offline,
   children,
 }: Props) {
+  const t = useT();
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -57,7 +60,7 @@ export function QueryGate({
     return (
       <EmptyState
         tone={emptyTone}
-        title={emptyTitle}
+        title={emptyTitle ?? t("state.nothingHere")}
         message={emptyMessage}
         actionLabel={emptyActionLabel}
         onAction={emptyOnAction}

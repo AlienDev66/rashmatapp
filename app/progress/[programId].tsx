@@ -13,8 +13,10 @@ import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { useT } from "@/src/i18n";
 
 export default function ProgramProgressScreen() {
+  const t = useT();
   const { programId } = useLocalSearchParams<{ programId: string }>();
   const { user } = useAuth();
   const { programs, sessions, loading, error, refresh } = useCatalog();
@@ -44,7 +46,7 @@ export default function ProgramProgressScreen() {
       return;
     }
     if (!user) {
-      Alert.alert("Sign in required", "Create an account to start this camp.");
+      Alert.alert(t("home.signInRequired"), t("home.signInBody"));
       router.push("/(auth)/sign-in");
       return;
     }
@@ -59,7 +61,10 @@ export default function ProgramProgressScreen() {
       const first = ordered[0];
       if (first) router.replace(`/workout/${first.id}`);
     } catch (e) {
-      Alert.alert("Could not start", e instanceof Error ? e.message : "Try again");
+      Alert.alert(
+        t("home.couldNotStart"),
+        e instanceof Error ? e.message : t("home.tryAgain"),
+      );
     } finally {
       setEnrolling(false);
     }
@@ -69,7 +74,7 @@ export default function ProgramProgressScreen() {
     <Screen>
       <View style={styles.top}>
         <BackButton />
-        <Text style={styles.title}>My progress</Text>
+        <Text style={styles.title}>{t("progressScreen.title")}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -78,9 +83,9 @@ export default function ProgramProgressScreen() {
         error={error}
         empty={!program}
         emptyTone="missing"
-        emptyTitle="Program not found"
-        emptyMessage="You may not be enrolled, or this program was removed."
-        emptyActionLabel="Browse programs  →"
+        emptyTitle={t("progressScreen.notFound")}
+        emptyMessage={t("progressScreen.notFoundBody")}
+        emptyActionLabel={t("programDetail.browsePrograms")}
         emptyOnAction={() => router.replace("/(tabs)/programs")}
         onRetry={() => {
           void refresh();
@@ -92,8 +97,8 @@ export default function ProgramProgressScreen() {
             <Text style={styles.hero}>{program.title}</Text>
             <Text style={styles.sub}>
               {enrollment
-                ? `Day ${enrollment.currentDay} · ${pct}% complete`
-                : "Not enrolled yet — start this camp to track progress."}
+                ? t("progressScreen.dayPct", { day: enrollment.currentDay, pct })
+                : t("progressScreen.notEnrolled")}
             </Text>
 
             <View style={styles.barTrack}>
@@ -111,25 +116,28 @@ export default function ProgramProgressScreen() {
                   contentFit="cover"
                 />
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.nextLabel}>NEXT SESSION</Text>
+                  <Text style={styles.nextLabel}>{t("progressScreen.nextSession")}</Text>
                   <Text style={styles.nextTitle} numberOfLines={1}>
                     {nextSession.title}
                   </Text>
                   <Text style={styles.nextMeta}>
-                    Day {nextSession.day} · {nextSession.minutes} min
+                    {t("progressScreen.dayMin", {
+                      day: nextSession.day,
+                      min: nextSession.minutes,
+                    })}
                   </Text>
                 </View>
                 <Text style={styles.nextChevron}>›</Text>
               </Pressable>
             ) : null}
 
-            <Text style={styles.section}>SCHEDULE</Text>
+            <Text style={styles.section}>{t("progressScreen.schedule")}</Text>
             {ordered.length === 0 ? (
               <EmptyState
                 compact
                 tone="training"
-                title="No sessions yet"
-                message="This program doesn’t have a schedule published."
+                title={t("progressScreen.noSessions")}
+                message={t("progressScreen.noSessionsBody")}
               />
             ) : (
               <View style={{ gap: 8 }}>
@@ -151,10 +159,10 @@ export default function ProgramProgressScreen() {
                         <Text style={styles.dayTitle}>{s.title}</Text>
                         <Text style={styles.dayMeta}>
                           {done
-                            ? "Done"
+                            ? t("progressScreen.done")
                             : current
-                              ? "Up next"
-                              : `Day ${s.day} · ${s.minutes} min`}
+                              ? t("progressScreen.upNext")
+                              : t("progressScreen.dayMin", { day: s.day, min: s.minutes })}
                         </Text>
                       </View>
                     </Pressable>
@@ -166,12 +174,12 @@ export default function ProgramProgressScreen() {
             <Button
               label={
                 enrolling
-                  ? "Starting…"
+                  ? t("programDetail.starting")
                   : enrollment
-                    ? "Continue training  →"
+                    ? t("programDetail.continueTraining")
                     : program.isPremium
-                      ? "Unlock this camp  →"
-                      : "Start this camp  →"
+                      ? t("programDetail.unlockCamp")
+                      : t("programDetail.startCamp")
               }
               variant="accent"
               disabled={enrolling}
