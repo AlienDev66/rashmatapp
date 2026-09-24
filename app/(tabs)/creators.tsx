@@ -1,11 +1,18 @@
 import { Avatar, CoverImage, Screen } from "@/src/components/ui/Screen";
 import { QueryGate } from "@/src/components/ui/QueryGate";
+import {
+  fetchFollowingCreatorIds,
+  toggleCreatorFollow,
+} from "@/src/data/follows";
 import { useCatalog } from "@/src/hooks/useCatalog";
+import { useAuth } from "@/src/providers/AuthProvider";
 import { colors, fonts, radii, spacing } from "@/src/theme";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { BadgeCheck, ChevronRight } from "lucide-react-native";
+import { useCallback, useMemo, useState } from "react";
 import {
+  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -14,24 +21,96 @@ import {
   View,
 } from "react-native";
 
+type Filter = "all" | "following";
+
 export default function CreatorsScreen() {
+  const { user } = useAuth();
   const { creators, programs, loading, error, refresh, refreshing, online } = useCatalog();
+  const [filter, setFilter] = useState<Filter>("all");
+  const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const reloadFollows = useCallback(async () => {
+    const ids = await fetchFollowingCreatorIds(user?.id);
+    setFollowingIds(ids);
+  }, [user?.id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void reloadFollows();
+    }, [reloadFollows]),
+  );
 
   const programById = (id: string) => programs.find((p) => p.id === id);
 
+  const visible = useMemo(() => {
+    if (filter === "following") return creators.filter((c) => followingIds.has(c.id));
+    return creators;
+  }, [creators, filter, followingIds]);
+
+  const onToggle = async (creatorId: string) => {
+    if (!user) {
+      Alert.alert("Sign in required", "Sign in to follow creators.");
+      router.push("/(auth)/sign-in");
+      return;
+    }
+    setBusyId(creatorId);
+    const result = await toggleCreatorFollow(creatorId, user.id);
+    setBusyId(null);
+    if (result.error) {
+      Alert.alert("Couldn’t update", result.error);
+      return;
+    }
+    setFollowingIds((prev) => {
+      const next = new Set(prev);
+      if (result.following) next.add(creatorId);
+      else next.delete(creatorId);
+      return next;
+    });
+  };
+
   return (
     <Screen>
-      <Text style={styles.title}>CREATORS</Text>
-      <Text style={styles.sub}>Follow creators and unlock their programs.</Text>
+      <View style={styles.headRow}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.title}>CREATORS</Text>
+          <Text style={styles.sub}>Follow creators and train with their programs.</Text>
+        </View>
+        <Pressable onPress={() => router.push("/following")} hitSlop={8}>
+          <Text style={styles.followingLink}>Following</Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.chips}>
+        <Pressable
+          style={[styles.chip, filter === "all" && styles.chipOn]}
+          onPress={() => setFilter("all")}
+        >
+          <Text style={[styles.chipText, filter === "all" && styles.chipTextOn]}>All</Text>
+        </Pressable>
+        <Pressable
+          style={[styles.chip, filter === "following" && styles.chipOn]}
+          onPress={() => setFilter("following")}
+        >
+          <Text style={[styles.chipText, filter === "following" && styles.chipTextOn]}>
+            Following
+          </Text>
+        </Pressable>
+      </View>
+
       <QueryGate
         loading={loading}
         error={error}
-        empty={creators.length === 0}
+        empty={visible.length === 0}
         emptyTone="creators"
-        emptyTitle="No creators yet"
-        emptyMessage="Creators who publish on RASHMAT will show up here."
-        emptyActionLabel="Refresh"
-        emptyOnAction={refresh}
+        emptyTitle={filter === "following" ? "Not following anyone yet" : "No creators yet"}
+        emptyMessage={
+          filter === "following"
+            ? "Tap Follow on a creator profile to build your list."
+            : "Creators who publish on RASHMAT will show up here."
+        }
+        emptyActionLabel={filter === "following" ? "Browse all" : "Refresh"}
+        emptyOnAction={filter === "following" ? () => setFilter("all") : refresh}
         emptySecondaryLabel="Open Studio"
         emptyOnSecondary={() => router.push("/studio")}
         onRetry={refresh}
@@ -43,14 +122,22 @@ export default function CreatorsScreen() {
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.accent} />
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => {
+                void refresh();
+                void reloadFollows();
+              }}
+              tintColor={colors.accent}
+            />
           }
         >
-          {creators.map((c) => {
+          {visible.map((c) => {
             const previews = c.programIds
               .map((pid) => programById(pid))
               .filter(Boolean)
               .slice(0, 3);
+            const isFollowing = followingIds.has(c.id);
 
             return (
               <Pressable
@@ -76,6 +163,19 @@ export default function CreatorsScreen() {
                       {c.programIds.length} program{c.programIds.length === 1 ? "" : "s"}
                     </Text>
                   </View>
+                  <Pressable
+                    style={[styles.followBtn, isFollowing && styles.followBtnOn]}
+                    onPress={(e) => {
+                      e.stopPropagation?.();
+                      void onToggle(c.id);
+                    }}
+                    disabled={busyId === c.id}
+                    hitSlop={6}
+                  >
+                    <Text style={[styles.followBtnText, isFollowing && styles.followBtnTextOn]}>
+                      {isFollowing ? "Following" : "Follow"}
+                    </Text>
+                  </Pressable>
                   <ChevronRight color={colors.textDim} size={20} />
                 </View>
 
@@ -120,21 +220,41 @@ export default function CreatorsScreen() {
 }
 
 const styles = StyleSheet.create({
+  headRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+    marginTop: 8,
+  },
   title: {
     color: colors.white,
     fontFamily: fonts.alumniBoldItalic,
     fontSize: 28,
     lineHeight: 30,
     letterSpacing: -0.4,
-    marginTop: 8,
   },
   sub: {
     color: colors.textMuted,
     fontFamily: fonts.poppinsRegular,
     fontSize: 13,
     marginTop: 6,
-    marginBottom: spacing.lg,
   },
+  followingLink: {
+    color: colors.accent,
+    fontFamily: fonts.poppinsSemiBold,
+    fontSize: 13,
+    marginTop: 8,
+  },
+  chips: { flexDirection: "row", gap: 8, marginTop: 14, marginBottom: spacing.lg },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: radii.pill,
+    backgroundColor: colors.surface,
+  },
+  chipOn: { backgroundColor: colors.accent },
+  chipText: { color: colors.textMuted, fontFamily: fonts.poppinsSemiBold, fontSize: 12 },
+  chipTextOn: { color: colors.black },
   list: { gap: 12, paddingBottom: 28 },
   card: {
     backgroundColor: colors.surface,
@@ -146,7 +266,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
     paddingHorizontal: spacing.lg,
   },
   meta: { flex: 1, minWidth: 0 },
@@ -170,6 +290,23 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 4,
   },
+  followBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: radii.pill,
+    backgroundColor: colors.accent,
+  },
+  followBtnOn: {
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.25)",
+  },
+  followBtnText: {
+    color: colors.black,
+    fontFamily: fonts.poppinsSemiBold,
+    fontSize: 12,
+  },
+  followBtnTextOn: { color: colors.white },
   programs: {
     paddingHorizontal: spacing.lg,
     gap: 8,

@@ -1,4 +1,3 @@
-import { images } from "@/src/data/mock";
 import { colors, fonts, spacing } from "@/src/theme";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -7,6 +6,8 @@ import { useState } from "react";
 import { Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Path, Text as SvgText } from "react-native-svg";
+
+const welcomeHero = require("@/src/assets/welcome-hero.jpg");
 
 const HERO = 84;
 const CTA_H = 52;
@@ -67,10 +68,10 @@ export default function WelcomeScreen() {
   return (
     <View style={styles.root}>
       <Image
-        source={{ uri: images.roll }}
+        source={welcomeHero}
         style={StyleSheet.absoluteFill}
         contentFit="cover"
-        contentPosition={{ top: "8%", right: 0 }}
+        contentPosition={{ top: "20%", right: 0 }}
       />
       <LinearGradient
         colors={["transparent", "rgba(20,17,17,0.45)", colors.bg]}
@@ -84,7 +85,7 @@ export default function WelcomeScreen() {
         <OutlineHeadline>BUILD</OutlineHeadline>
         <Text style={[styles.heroBase, styles.solid]}>YOUR GAME</Text>
         <Text style={styles.sub}>
-          Martial arts programs with real progress — drill, track, and build your game.
+          Train with creators who live your sport — drill, track, and build your game.
         </Text>
         <ChamferButton label="FIND YOUR JOURNEY" onPress={() => router.push("/(auth)/sign-in")} />
       </View>
@@ -121,10 +122,10 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   sub: {
+    color: colors.white,
     fontFamily: fonts.poppinsRegular,
     fontSize: 13,
     lineHeight: 20,
-    color: colors.white,
     marginBottom: 24,
     maxWidth: 250,
   },
