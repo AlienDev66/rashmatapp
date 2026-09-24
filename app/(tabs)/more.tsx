@@ -2,6 +2,7 @@ import { Avatar, Screen } from "@/src/components/ui/Screen";
 import { EmptyState } from "@/src/components/ui/EmptyState";
 import { useCatalog } from "@/src/hooks/useCatalog";
 import { useProgress } from "@/src/hooks/useProgress";
+import { useT } from "@/src/i18n";
 import { brand } from "@/src/lib/brand";
 import { useAuth } from "@/src/providers/AuthProvider";
 import { colors, fonts, radii, spacing, typography } from "@/src/theme";
@@ -22,6 +23,7 @@ import { fetchAthleteStats } from "@/src/data/achievements";
 
 export default function MoreScreen() {
   const { profile, user, signOut, refreshProfile } = useAuth();
+  const t = useT();
   const { programs } = useCatalog();
   const { enrollments } = useProgress();
   const [stats, setStats] = useState({ streak: 0, sessions: 0, camps: 0 });
@@ -41,7 +43,7 @@ export default function MoreScreen() {
     }, [refreshProfile, user?.id, profile?.xp]),
   );
 
-  const name = (profile?.full_name ?? user?.email?.split("@")[0] ?? "Athlete").toUpperCase();
+  const name = (profile?.full_name ?? user?.email?.split("@")[0] ?? t("common.athlete")).toUpperCase();
   const enrolledPrograms = enrollments
     .map((e) => programs.find((p) => p.id === e.programId))
     .filter(Boolean)
@@ -57,7 +59,7 @@ export default function MoreScreen() {
   return (
     <Screen>
       <View style={styles.topBar}>
-        <Text style={styles.screenTitle}>Profile</Text>
+        <Text style={styles.screenTitle}>{t("more.profile")}</Text>
         <Pressable style={styles.settings} onPress={() => router.push("/settings")}>
           <Settings color={colors.white} size={18} />
         </Pressable>
@@ -71,42 +73,42 @@ export default function MoreScreen() {
       > 
         <Pressable style={styles.hero} onPress={() => router.push("/personal-info")}>
           <Avatar uri={profile?.avatar_url} name={name} size={110} ring />
-          <Text style={styles.editHint}>Edit profile & photo</Text>
+          <Text style={styles.editHint}>{t("more.editProfile")}</Text>
           <Text style={styles.name}>{name}</Text>
           <View style={styles.xpRow}>
             <Trophy color={colors.accent} size={14} />
             <Text style={styles.xp}>{profile?.xp ?? 0} XP</Text>
           </View>
           <Pressable onPress={() => router.push("/achievements")}>
-            <Text style={styles.achievementsLink}>Achievements ›</Text>
+            <Text style={styles.achievementsLink}>{t("more.achievements")}</Text>
           </Pressable>
           <View style={styles.meta}>
             <MapPin color={colors.textMuted} size={12} />
             <Text style={styles.metaText}>
-              {[profile?.city, profile?.country].filter(Boolean).join(", ") || "Add location"}
+              {[profile?.city, profile?.country].filter(Boolean).join(", ") || t("more.addLocation")}
             </Text>
             <Text style={styles.dot}>·</Text>
             <Pressable style={styles.membership} onPress={() => router.push("/paywall")}>
               <User color={colors.textMuted} size={12} />
-              <Text style={styles.metaText}>{profile?.membership ?? "Basic member"}</Text>
+              <Text style={styles.metaText}>{profile?.membership ?? t("more.basicMember")}</Text>
             </Pressable>
           </View>
         </Pressable>
 
         <View style={styles.stats}>
-          <Stat value={String(stats.streak)} unit="streak" />
-          <Stat value={String(stats.sessions)} unit="sessions" />
-          <Stat value={String(stats.camps)} unit="camps" />
+          <Stat value={String(stats.streak)} unit={t("more.streak")} />
+          <Stat value={String(stats.sessions)} unit={t("more.sessions")} />
+          <Stat value={String(stats.camps)} unit={t("more.camps")} />
         </View>
 
-        <Text style={styles.section}>YOUR PROGRAMS</Text>
+        <Text style={styles.section}>{t("more.yourPrograms")}</Text>
         {displayPrograms.length === 0 ? (
           <EmptyState
             compact
             tone="programs"
-            title="No programs yet"
-            message="Unlock a creator camp to see it here."
-            actionLabel="Browse programs  →"
+            title={t("more.noPrograms")}
+            message={t("more.noProgramsMsg")}
+            actionLabel={t("more.browsePrograms")}
             onAction={() => router.push("/(tabs)/programs")}
           />
         ) : (
@@ -129,7 +131,7 @@ export default function MoreScreen() {
                   />
                   {enrollments.some((e) => e.programId === p.id) ? (
                     <View style={styles.current}>
-                      <Text style={styles.currentText}>CURRENT</Text>
+                      <Text style={styles.currentText}>{t("more.current")}</Text>
                     </View>
                   ) : null}
                   <Text style={styles.progTitle}>{p.title}</Text>
@@ -142,62 +144,62 @@ export default function MoreScreen() {
         <View style={styles.menu}>
           <MenuRow
             icon={<Trophy color={colors.accent} size={20} />}
-            title="Achievements"
-            sub="XP, medals, streak & leaderboard"
+            title={t("more.achievementsTitle")}
+            sub={t("more.achievementsSub")}
             onPress={() => router.push("/achievements")}
           />
           <MenuRow
             icon={<BookOpen color={colors.accent} size={20} />}
-            title="Rules library"
-            sub="IBJJF, ADCC, AJP & boxing divisions"
+            title={t("more.library")}
+            sub={t("more.librarySub")}
             onPress={() => router.push("/library")}
           />
           <MenuRow
             icon={<Users color={colors.accent} size={20} />}
-            title="Following"
-            sub="Creators you follow · train with them"
+            title={t("more.following")}
+            sub={t("more.followingSub")}
             onPress={() => router.push("/following")}
           />
           <MenuRow
             icon={<MessageCircle color={colors.accent} size={20} />}
-            title="Community"
+            title={t("more.community")}
             sub={brand.community.label}
             onPress={() => void Linking.openURL(brand.community.discord)}
           />
           <MenuRow
             icon={<Gift color={colors.accent} size={20} />}
-            title="Invite a training partner"
-            sub="Share your code · earn medals"
+            title={t("more.referrals")}
+            sub={t("more.referralsSub")}
             onPress={() => router.push("/referrals")}
           />
           <MenuRow
             icon={<Bell color={colors.accent} size={20} />}
-            title="Manage notifications"
-            sub="Reminders & creator updates"
+            title={t("more.notifications")}
+            sub={t("more.notificationsSub")}
             onPress={() => router.push("/settings")}
           />
           <MenuRow
             icon={<User color={colors.accent} size={20} />}
-            title="Personal information"
-            sub="Edit name, city, age, weight"
+            title={t("more.personalInfo")}
+            sub={t("more.personalInfoSub")}
             onPress={() => router.push("/personal-info")}
           />
           <MenuRow
             icon={<Clapperboard color={colors.accent} size={20} />}
-            title="Creator Studio"
-            sub="Publish programs & track students"
+            title={t("more.studio")}
+            sub={t("more.studioSub")}
             onPress={() => router.push("/studio")}
           />
           <MenuRow
             icon={<CreditCard color={colors.accent} size={20} />}
-            title="Subscriptions"
-            sub="Manage your membership"
+            title={t("more.subscriptions")}
+            sub={t("more.subscriptionsSub")}
             onPress={() => router.push("/subscriptions")}
           />
         </View>
 
         <Pressable style={styles.logout} onPress={onLogout}>
-          <Text style={styles.logoutText}>Logout</Text>
+          <Text style={styles.logoutText}>{t("more.logout")}</Text>
           <LogOut color={colors.danger} size={16} />
         </Pressable>
 

@@ -1,8 +1,10 @@
 import { TabBar } from "@/src/components/navigation/TabBar";
+import { useT } from "@/src/i18n";
 import { colors } from "@/src/theme";
 import { Tabs } from "expo-router";
 
 export default function TabsLayout() {
+  const t = useT();
   return (
     <Tabs
       tabBar={(props) => <TabBar {...props} />}
@@ -11,10 +13,10 @@ export default function TabsLayout() {
         sceneStyle: { backgroundColor: colors.bg },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: "Home" }} />
-      <Tabs.Screen name="creators" options={{ title: "Creators" }} />
-      <Tabs.Screen name="programs" options={{ title: "Programs" }} />
-      <Tabs.Screen name="more" options={{ title: "Profile" }} />
+      <Tabs.Screen name="index" options={{ title: t("tabs.home") }} />
+      <Tabs.Screen name="creators" options={{ title: t("tabs.creators") }} />
+      <Tabs.Screen name="programs" options={{ title: t("tabs.programs") }} />
+      <Tabs.Screen name="more" options={{ title: t("tabs.profile") }} />
     </Tabs>
   );
 }

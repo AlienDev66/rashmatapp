@@ -1,4 +1,5 @@
 import { colors, fonts, spacing } from "@/src/theme";
+import { useT } from "@/src/i18n";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -64,6 +65,7 @@ function ChamferButton({ label, onPress }: { label: string; onPress: () => void 
 /** In-app auth entry — marketing + Studio live in the sibling `web/` package. */
 export default function WelcomeScreen() {
   const insets = useSafeAreaInsets();
+  const t = useT();
 
   return (
     <View style={styles.root}>
@@ -80,14 +82,12 @@ export default function WelcomeScreen() {
       />
       <View style={[styles.content, { paddingBottom: insets.bottom + 28 }]}>
         <Text style={styles.kicker}>
-          TRAIN ON THE <Text style={styles.bolt}>MAT</Text>
+          {t("welcome.kicker")} <Text style={styles.bolt}>{t("welcome.kickerAccent")}</Text>
         </Text>
-        <OutlineHeadline>BUILD</OutlineHeadline>
-        <Text style={[styles.heroBase, styles.solid]}>YOUR GAME</Text>
-        <Text style={styles.sub}>
-          Train with creators who live your sport — drill, track, and build your game.
-        </Text>
-        <ChamferButton label="FIND YOUR JOURNEY" onPress={() => router.push("/(auth)/sign-in")} />
+        <OutlineHeadline>{t("welcome.titleOutline")}</OutlineHeadline>
+        <Text style={[styles.heroBase, styles.solid]}>{t("welcome.titleSolid")}</Text>
+        <Text style={styles.sub}>{t("welcome.sub")}</Text>
+        <ChamferButton label={t("welcome.cta")} onPress={() => router.push("/(auth)/sign-in")} />
       </View>
     </View>
   );

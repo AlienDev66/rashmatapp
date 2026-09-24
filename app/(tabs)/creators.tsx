@@ -5,6 +5,7 @@ import {
   toggleCreatorFollow,
 } from "@/src/data/follows";
 import { useCatalog } from "@/src/hooks/useCatalog";
+import { useT } from "@/src/i18n";
 import { useAuth } from "@/src/providers/AuthProvider";
 import { colors, fonts, radii, spacing } from "@/src/theme";
 import { LinearGradient } from "expo-linear-gradient";
@@ -25,6 +26,7 @@ type Filter = "all" | "following";
 
 export default function CreatorsScreen() {
   const { user } = useAuth();
+  const t = useT();
   const { creators, programs, loading, error, refresh, refreshing, online } = useCatalog();
   const [filter, setFilter] = useState<Filter>("all");
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
@@ -50,7 +52,7 @@ export default function CreatorsScreen() {
 
   const onToggle = async (creatorId: string) => {
     if (!user) {
-      Alert.alert("Sign in required", "Sign in to follow creators.");
+      Alert.alert(t("creators.signInRequired"), t("creators.signInBody"));
       router.push("/(auth)/sign-in");
       return;
     }
@@ -58,7 +60,7 @@ export default function CreatorsScreen() {
     const result = await toggleCreatorFollow(creatorId, user.id);
     setBusyId(null);
     if (result.error) {
-      Alert.alert("Couldn’t update", result.error);
+      Alert.alert(t("creators.updateFailed"), result.error);
       return;
     }
     setFollowingIds((prev) => {
@@ -73,11 +75,11 @@ export default function CreatorsScreen() {
     <Screen>
       <View style={styles.headRow}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>CREATORS</Text>
-          <Text style={styles.sub}>Follow creators and train with their programs.</Text>
+          <Text style={styles.title}>{t("creators.title")}</Text>
+          <Text style={styles.sub}>{t("creators.sub")}</Text>
         </View>
         <Pressable onPress={() => router.push("/following")} hitSlop={8}>
-          <Text style={styles.followingLink}>Following</Text>
+          <Text style={styles.followingLink}>{t("creators.following")}</Text>
         </Pressable>
       </View>
 
@@ -86,14 +88,16 @@ export default function CreatorsScreen() {
           style={[styles.chip, filter === "all" && styles.chipOn]}
           onPress={() => setFilter("all")}
         >
-          <Text style={[styles.chipText, filter === "all" && styles.chipTextOn]}>All</Text>
+          <Text style={[styles.chipText, filter === "all" && styles.chipTextOn]}>
+            {t("creators.all")}
+          </Text>
         </Pressable>
         <Pressable
           style={[styles.chip, filter === "following" && styles.chipOn]}
           onPress={() => setFilter("following")}
         >
           <Text style={[styles.chipText, filter === "following" && styles.chipTextOn]}>
-            Following
+            {t("creators.filterFollowing")}
           </Text>
         </Pressable>
       </View>
@@ -103,15 +107,15 @@ export default function CreatorsScreen() {
         error={error}
         empty={visible.length === 0}
         emptyTone="creators"
-        emptyTitle={filter === "following" ? "Not following anyone yet" : "No creators yet"}
-        emptyMessage={
-          filter === "following"
-            ? "Tap Follow on a creator profile to build your list."
-            : "Creators who publish on RASHMAT will show up here."
+        emptyTitle={
+          filter === "following" ? t("creators.emptyFollowing") : t("creators.emptyAll")
         }
-        emptyActionLabel={filter === "following" ? "Browse all" : "Refresh"}
+        emptyMessage={
+          filter === "following" ? t("creators.emptyFollowingMsg") : t("creators.emptyAllMsg")
+        }
+        emptyActionLabel={filter === "following" ? t("creators.browseAll") : t("creators.refresh")}
         emptyOnAction={filter === "following" ? () => setFilter("all") : refresh}
-        emptySecondaryLabel="Open Studio"
+        emptySecondaryLabel={t("creators.openStudio")}
         emptyOnSecondary={() => router.push("/studio")}
         onRetry={refresh}
         offline={!online}
@@ -173,7 +177,7 @@ export default function CreatorsScreen() {
                     hitSlop={6}
                   >
                     <Text style={[styles.followBtnText, isFollowing && styles.followBtnTextOn]}>
-                      {isFollowing ? "Following" : "Follow"}
+                      {isFollowing ? t("creators.followingChip") : t("creators.follow")}
                     </Text>
                   </Pressable>
                   <ChevronRight color={colors.textDim} size={20} />

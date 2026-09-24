@@ -3,6 +3,7 @@ import { BrandMark } from "@/src/components/ui/BrandMark";
 import { Button } from "@/src/components/ui/Button";
 import { DismissKeyboard } from "@/src/components/ui/DismissKeyboard";
 import { TextField } from "@/src/components/ui/TextField";
+import { useT } from "@/src/i18n";
 import { useAuth } from "@/src/providers/AuthProvider";
 import { colors, fonts, spacing } from "@/src/theme";
 import { router } from "expo-router";
@@ -13,20 +14,21 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function SignInScreen() {
   const insets = useSafeAreaInsets();
   const { signInWithEmail, signInWithOAuth, configured } = useAuth();
+  const t = useT();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
   const onEmailSignIn = async () => {
     if (!email.trim() || !password) {
-      Alert.alert("Missing fields", "Enter email and password.");
+      Alert.alert(t("auth.missingTitle"), t("auth.missingBody"));
       return;
     }
     setBusy(true);
     const { error } = await signInWithEmail(email.trim(), password);
     setBusy(false);
     if (error) {
-      Alert.alert("Sign in failed", error);
+      Alert.alert(t("auth.failedTitle"), error);
       return;
     }
     router.replace("/(tabs)");
@@ -36,7 +38,7 @@ export default function SignInScreen() {
     setBusy(true);
     const { error } = await signInWithOAuth(provider);
     setBusy(false);
-    if (error) Alert.alert("Sign in failed", error);
+    if (error) Alert.alert(t("auth.failedTitle"), error);
     else if (configured) router.replace("/(tabs)");
   };
 
@@ -47,12 +49,12 @@ export default function SignInScreen() {
       <View style={styles.brand}>
         <BrandMark size={56} variant="yellow" />
       </View>
-      <Text style={styles.title}>Sign In To RASHMAT</Text>
-      <Text style={styles.sub}>Train with creators who live your sport.</Text>
+      <Text style={styles.title}>{t("auth.signInTitle")}</Text>
+      <Text style={styles.sub}>{t("auth.signInSub")}</Text>
 
       <View style={styles.form}>
         <TextField
-          placeholder="Phone / Email"
+          placeholder={t("auth.emailPlaceholder")}
           autoCapitalize="none"
           keyboardType="email-address"
           value={email}
@@ -60,27 +62,27 @@ export default function SignInScreen() {
           leftIcon={<EmailIcon size={20} color={colors.white} />}
         />
         <TextField
-          placeholder="Password"
+          placeholder={t("auth.passwordPlaceholder")}
           secureTextEntry
           value={password}
           onChangeText={setPassword}
           leftIcon={<PasswordIcon size={20} color={colors.white} />}
         />
-        <Button label="Go  →" loading={busy} disabled={busy} onPress={onEmailSignIn} />
+        <Button label={t("auth.go")} loading={busy} disabled={busy} onPress={onEmailSignIn} />
       </View>
 
       <View style={styles.divider} />
 
       <View style={styles.social}>
         <Button
-          label="Go With Gmail"
+          label={t("auth.goGmail")}
           variant="light"
           iconLeft={<GoogleIcon size={22} />}
           disabled={busy}
           onPress={() => onOAuth("google")}
         />
         <Button
-          label="Go With Apple"
+          label={t("auth.goApple")}
           iconLeft={<AppleIcon size={22} color={colors.white} />}
           disabled={busy}
           onPress={() => onOAuth("apple")}
@@ -89,13 +91,13 @@ export default function SignInScreen() {
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>
-          Don&apos;t have an account?{" "}
+          {t("auth.noAccount")}{" "}
           <Text style={styles.link} onPress={() => router.push("/(auth)/sign-up")}>
-            Sign Up.
+            {t("auth.signUp")}
           </Text>
         </Text>
         <Pressable onPress={() => router.push("/(auth)/forgot-password")}>
-          <Text style={styles.link}>Forgot Password</Text>
+          <Text style={styles.link}>{t("auth.forgot")}</Text>
         </Pressable>
       </View>
     </DismissKeyboard>

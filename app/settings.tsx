@@ -1,15 +1,19 @@
 import { BackButton } from "@/src/components/ui/BackButton";
 import { Screen } from "@/src/components/ui/Screen";
+import { useI18n, useT } from "@/src/i18n";
+import { LOCALES, LOCALE_LABELS, type Locale } from "@/src/i18n/types";
 import { parseNotificationPrefs } from "@/src/lib/profile";
 import { useAuth } from "@/src/providers/AuthProvider";
 import { colors, fonts, radii, spacing } from "@/src/theme";
 import { router } from "expo-router";
-import { Bell, ChevronRight, Lock, Moon, Shield, User } from "lucide-react-native";
+import { Bell, ChevronRight, Globe, Lock, Moon, Shield, User } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
 
 export default function SettingsScreen() {
   const { profile, user, updateProfile, refreshProfile } = useAuth();
+  const { locale, setLocale } = useI18n();
+  const t = useT();
   const prefs = parseNotificationPrefs(profile?.notification_prefs);
   const [workoutReminders, setWorkoutReminders] = useState(prefs.workout_reminders);
   const [creatorUpdates, setCreatorUpdates] = useState(prefs.creator_updates);
@@ -34,41 +38,67 @@ export default function SettingsScreen() {
     await updateProfile({ notification_prefs: next });
   };
 
-  const displayName =
-    profile?.full_name || user?.email || "Athlete";
+  const displayName = profile?.full_name || user?.email || t("common.athlete");
 
   return (
     <Screen>
       <View style={styles.top}>
         <BackButton />
-        <Text style={styles.title}>Account Setting</Text>
+        <Text style={styles.title}>{t("settings.title")}</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <Text style={styles.email}>{displayName}</Text>
-      <Text style={styles.hint}>{user?.email ?? "Manage your RASHMAT account"}</Text>
+      <Text style={styles.hint}>{user?.email ?? t("settings.hint")}</Text>
 
-      <Text style={styles.section}>General</Text>
+      <Text style={styles.section}>{t("settings.language")}</Text>
+      <View style={styles.group}>
+        <View style={styles.langRow}>
+          <View style={styles.icon}>
+            <Globe color={colors.accent} size={18} />
+          </View>
+          <Text style={styles.label}>{t("lang.hint")}</Text>
+        </View>
+        <View style={styles.langChips}>
+          {LOCALES.map((code) => (
+            <Pressable
+              key={code}
+              style={[styles.langChip, locale === code && styles.langChipActive]}
+              onPress={() => setLocale(code as Locale)}
+            >
+              <Text style={[styles.langChipText, locale === code && styles.langChipTextActive]}>
+                {LOCALE_LABELS[code]}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
+      <Text style={styles.section}>{t("settings.general")}</Text>
       <View style={styles.group}>
         <Row
           icon={<User color={colors.accent} size={18} />}
-          label="Personal Information"
+          label={t("settings.personalInfo")}
           onPress={() => router.push("/personal-info")}
         />
         <Row
           icon={<Bell color={colors.accent} size={18} />}
-          label="Notification center"
+          label={t("settings.notificationCenter")}
           onPress={() => router.push("/notifications")}
         />
-        <Row icon={<Moon color={colors.accent} size={18} />} label="Appearance" value="Dark" />
-        <Row icon={<Lock color={colors.accent} size={18} />} label="Privacy" />
-        <Row icon={<Shield color={colors.accent} size={18} />} label="Security" />
+        <Row
+          icon={<Moon color={colors.accent} size={18} />}
+          label={t("settings.appearance")}
+          value={t("settings.appearanceDark")}
+        />
+        <Row icon={<Lock color={colors.accent} size={18} />} label={t("settings.privacy")} />
+        <Row icon={<Shield color={colors.accent} size={18} />} label={t("settings.security")} />
       </View>
 
-      <Text style={styles.section}>Notifications</Text>
+      <Text style={styles.section}>{t("settings.notifications")}</Text>
       <View style={styles.group}>
         <ToggleRow
-          label="Training reminders"
+          label={t("settings.trainingReminders")}
           value={workoutReminders}
           onValueChange={(v) => {
             setWorkoutReminders(v);
@@ -80,7 +110,7 @@ export default function SettingsScreen() {
           }}
         />
         <ToggleRow
-          label="Creator updates"
+          label={t("settings.creatorUpdates")}
           value={creatorUpdates}
           onValueChange={(v) => {
             setCreatorUpdates(v);
@@ -92,7 +122,7 @@ export default function SettingsScreen() {
           }}
         />
         <ToggleRow
-          label="Offers & tips"
+          label={t("settings.offers")}
           value={marketing}
           onValueChange={(v) => {
             setMarketing(v);
@@ -187,6 +217,37 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
+  },
+  langRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: spacing.lg,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  langChips: {
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: 16,
+  },
+  langChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: colors.surfaceElevated,
+  },
+  langChipActive: {
+    backgroundColor: colors.accent,
+  },
+  langChipText: {
+    color: colors.textMuted,
+    fontFamily: fonts.poppinsSemiBold,
+    fontSize: 13,
+  },
+  langChipTextActive: {
+    color: "#111",
   },
   icon: {
     width: 34,
