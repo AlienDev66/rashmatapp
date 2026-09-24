@@ -37,6 +37,14 @@ export const MEDAL_DEFS: MedalDef[] = [
     iconKey: "star",
   },
   {
+    id: "follow-1",
+    title: "Corner Crew",
+    summary: "Follow your first creator on RASHMAT.",
+    category: "growth",
+    xpReward: 150,
+    iconKey: "users",
+  },
+  {
     id: "week-warrior",
     title: "Week Warrior",
     summary: "Log 4 sessions in 7 days.",
@@ -102,6 +110,7 @@ export type TrainingStats = {
   xp: number;
   isEarlyMember: boolean;
   hasFavorite: boolean;
+  hasFollow: boolean;
   referralUnlocks: number;
 };
 
@@ -114,6 +123,7 @@ export function medalsEarnedByStats(stats: TrainingStats, owned: Set<string>): s
   tryAdd("day-one", stats.isEarlyMember);
   tryAdd("first-session", stats.totalSessions >= 1);
   tryAdd("favorite-camp", stats.hasFavorite);
+  tryAdd("follow-1", stats.hasFollow);
   tryAdd("week-warrior", stats.weeklySessions >= 4);
   tryAdd("streak-3", stats.streakDays >= 3);
   tryAdd("streak-7", stats.streakDays >= 7);
