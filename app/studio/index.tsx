@@ -15,7 +15,6 @@ import { colors, fonts, radii, spacing } from "@/src/theme";
 import { Link, router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import {
-import { useT } from "@/src/i18n";
   ActivityIndicator,
   Alert,
   Linking,
@@ -26,6 +25,7 @@ import { useT } from "@/src/i18n";
   Text,
   View,
 } from "react-native";
+import { useT } from "@/src/i18n";
 
 export default function StudioHomeScreen() {
   const t = useT();

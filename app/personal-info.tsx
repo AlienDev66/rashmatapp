@@ -9,7 +9,6 @@ import { router } from "expo-router";
 import { Camera } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
-import { useT } from "@/src/i18n";
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -19,6 +18,7 @@ import { useT } from "@/src/i18n";
   Text,
   View,
 } from "react-native";
+import { useT } from "@/src/i18n";
 
 export default function PersonalInfoScreen() {
   const t = useT();

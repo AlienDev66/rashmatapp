@@ -20,7 +20,6 @@ import { colors, fonts, radii, spacing } from "@/src/theme";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-import { useT } from "@/src/i18n";
   Alert,
   Pressable,
   ScrollView,
@@ -28,6 +27,7 @@ import { useT } from "@/src/i18n";
   Text,
   View,
 } from "react-native";
+import { useT } from "@/src/i18n";
 
 /**
  * Full Studio CMS — best on web; usable on mobile for drill editing.

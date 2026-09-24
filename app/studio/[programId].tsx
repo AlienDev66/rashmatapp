@@ -19,7 +19,6 @@ import { colors, fonts, radii } from "@/src/theme";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-import { useT } from "@/src/i18n";
   Alert,
   Pressable,
   ScrollView,
@@ -27,6 +26,7 @@ import { useT } from "@/src/i18n";
   Text,
   View,
 } from "react-native";
+import { useT } from "@/src/i18n";
 
 export default function StudioProgramDetailScreen() {
   const t = useT();

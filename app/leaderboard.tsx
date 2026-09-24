@@ -14,7 +14,6 @@ import { colors, fonts, radii, spacing } from "@/src/theme";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
-import { useT } from "@/src/i18n";
   ActivityIndicator,
   Pressable,
   ScrollView,
@@ -22,6 +21,7 @@ import { useT } from "@/src/i18n";
   Text,
   View,
 } from "react-native";
+import { useT } from "@/src/i18n";
 
 export default function LeaderboardScreen() {
   const t = useT();
