@@ -9,6 +9,7 @@ import {
   type StudioProgram,
   type StudentProgressRow,
 } from "@/src/data/studio";
+import { fetchMyCreatorFollowers } from "@/src/data/follows";
 import { useAuth } from "@/src/providers/AuthProvider";
 import { colors, fonts, radii, spacing } from "@/src/theme";
 import { Link, router, useFocusEffect } from "expo-router";
@@ -31,6 +32,7 @@ export default function StudioHomeScreen() {
   const [loading, setLoading] = useState(true);
   const [programs, setPrograms] = useState<StudioProgram[]>([]);
   const [students, setStudents] = useState<StudentProgressRow[]>([]);
+  const [followerCount, setFollowerCount] = useState(0);
 
   const load = useCallback(async () => {
     if (!user) {
@@ -38,12 +40,14 @@ export default function StudioHomeScreen() {
       return;
     }
     setLoading(true);
-    const [progs, studs] = await Promise.all([
+    const [progs, studs, followers] = await Promise.all([
       fetchMyPrograms(user.id),
       fetchCreatorStudentProgress(),
+      fetchMyCreatorFollowers(),
     ]);
     setPrograms(progs.programs);
     setStudents(studs.rows);
+    setFollowerCount(followers.length);
     setLoading(false);
   }, [user]);
 
@@ -69,11 +73,6 @@ export default function StudioHomeScreen() {
     await refreshProfile();
     await load();
   };
-
-  const avgProgress =
-    students.length === 0
-      ? 0
-      : Math.round(students.reduce((s, r) => s + r.progress_pct, 0) / students.length);
 
   if (!profile?.is_creator) {
     return (
@@ -113,7 +112,10 @@ export default function StudioHomeScreen() {
         <View style={styles.stats}>
           <Stat label="Programs" value={String(programs.length)} />
           <Stat label="Students" value={String(students.length)} />
-          <Stat label="Avg progress" value={`${avgProgress}%`} />
+          <Pressable style={styles.stat} onPress={() => router.push("/studio/followers")}>
+            <Text style={styles.statValue}>{followerCount}</Text>
+            <Text style={styles.statLabel}>Followers</Text>
+          </Pressable>
         </View>
 
         <Button
@@ -180,6 +182,24 @@ export default function StudioHomeScreen() {
             ))}
           </View>
         )}
+
+        <View style={styles.rowBetween}>
+          <Text style={styles.section}>FOLLOWERS</Text>
+          <Link href="/studio/followers" asChild>
+            <Pressable>
+              <Text style={styles.seeAll}>See all</Text>
+            </Pressable>
+          </Link>
+        </View>
+        <Pressable style={styles.card} onPress={() => router.push("/studio/followers")}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.cardTitle}>
+              {followerCount} follower{followerCount === 1 ? "" : "s"}
+            </Text>
+            <Text style={styles.cardMeta}>Athletes who follow your creator profile</Text>
+          </View>
+          <Text style={styles.chev}>›</Text>
+        </Pressable>
 
         <View style={styles.rowBetween}>
           <Text style={styles.section}>STUDENTS</Text>
