@@ -96,6 +96,8 @@ export default function RootLayout() {
             <Stack.Screen name="leaderboard" />
             <Stack.Screen name="workout-logs" />
             <Stack.Screen name="referrals" />
+            <Stack.Screen name="following" />
+            <Stack.Screen name="creator-followers/[id]" />
             <Stack.Screen name="creator-programs/[id]" />
           </Stack>
         </View>
