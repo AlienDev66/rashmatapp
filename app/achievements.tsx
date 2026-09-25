@@ -103,7 +103,7 @@ export default function AchievementsScreen() {
               const unlocked = owned.has(m.id);
               return (
                 <View key={m.id} style={[styles.medalChip, !unlocked && styles.medalLocked]}>
-                  <Text style={styles.medalTitle}>{m.title}</Text>
+                  <Text style={styles.medalTitle}>{t(m.titleKey)}</Text>
                   <Text style={styles.medalXp}>
                     {t("achievementsExtra.xpValue", { n: m.xpReward })}
                   </Text>

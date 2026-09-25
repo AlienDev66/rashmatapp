@@ -65,10 +65,10 @@ export default function MedalsScreen() {
           return (
             <View key={m.id} style={styles.cell}>
               <View style={[styles.badge, !unlocked && styles.badgeLocked]}>
-                <Text style={styles.badgeGlyph}>{m.title.slice(0, 1)}</Text>
+                <Text style={styles.badgeGlyph}>{t(m.titleKey).slice(0, 1)}</Text>
               </View>
               <Text style={styles.medalTitle} numberOfLines={2}>
-                {m.title}
+                {t(m.titleKey)}
               </Text>
               <View style={styles.xpPill}>
                 <Text style={styles.xpText}>
