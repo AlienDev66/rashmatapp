@@ -1,59 +1,20 @@
+/** Verifies every t("…") key exists in both locales and that en/pt stay in sync. */
 import { execSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 
 const root = new URL("..", import.meta.url).pathname;
+const { messages } = await import(pathToFileURL(root + "src/i18n/messages.ts"));
 
-const SOURCES = [
-  ["src/i18n/messages.ts", "const en =", "const pt"],
-  ["src/i18n/catalog.ts", "const en =", "const pt"],
-  ["src/i18n/catalog2.ts", "const en =", "const pt"],
-  ["src/i18n/catalog3.ts", "const en =", "const pt"],
-];
-
-function sliceObject(text, startMarker) {
-  const start = text.indexOf(startMarker);
-  if (start < 0) return null;
-  const i = text.indexOf("{", start);
-  let depth = 0;
-  for (let j = i; j < text.length; j++) {
-    if (text[j] === "{") depth++;
-    else if (text[j] === "}") {
-      depth--;
-      if (depth === 0) return text.slice(i, j + 1);
-    }
+function flatten(dict, path = [], out = new Set()) {
+  for (const [k, v] of Object.entries(dict)) {
+    if (v && typeof v === "object") flatten(v, [...path, k], out);
+    else out.add([...path, k].join("."));
   }
-  return null;
+  return out;
 }
 
-function keysOf(objText) {
-  const keys = new Set();
-  const path = [];
-  for (const line of objText.split("\n")) {
-    const open = line.match(/^\s*([A-Za-z0-9_]+):\s*\{\s*$/);
-    if (open) {
-      path.push(open[1]);
-      continue;
-    }
-    if (/^\s*\},?\s*$/.test(line)) {
-      path.pop();
-      continue;
-    }
-    const leaf = line.match(/^\s*([A-Za-z0-9_]+):\s*(?:"|'|`|$)/);
-    if (leaf) keys.add([...path, leaf[1]].join("."));
-  }
-  return keys;
-}
-
-const en = new Set();
-const pt = new Set();
-for (const [file, enMarker, ptMarker] of SOURCES) {
-  if (!existsSync(root + file)) continue;
-  const text = readFileSync(root + file, "utf8");
-  const enObj = sliceObject(text, enMarker);
-  const ptObj = sliceObject(text, ptMarker);
-  if (enObj) for (const k of keysOf(enObj)) en.add(k);
-  if (ptObj) for (const k of keysOf(ptObj)) pt.add(k);
-}
+const en = flatten(messages.en);
+const pt = flatten(messages.pt);
 
 const grep = execSync(
   `rg -o --no-filename 't\\("([a-zA-Z0-9_]+(?:\\.[a-zA-Z0-9_]+)+)"' -r '$1' app src`,
@@ -61,10 +22,20 @@ const grep = execSync(
 );
 const used = new Set(grep.split("\n").filter(Boolean));
 
-const report = (label, list) =>
-  console.log(`\n${label} (${list.length})${list.length ? "\n  " + list.join("\n  ") : ""}`);
+// Keys built at runtime, e.g. t(`goals.${id}`) or t(step.questionKey).
+const dynamic = execSync(
+  `rg -o --no-filename '"((?:assessment|medals|drillTips|goals|extra|state)\\.[a-zA-Z0-9_.]+)"' -r '$1' app src --glob '!src/i18n/**'`,
+  { cwd: root, encoding: "utf8" },
+);
+for (const k of dynamic.split("\n").filter(Boolean)) used.add(k);
 
-report("USED BUT MISSING IN EN", [...used].filter((k) => !en.has(k)).sort());
-report("USED BUT MISSING IN PT", [...used].filter((k) => !pt.has(k)).sort());
-report("IN EN BUT NOT PT", [...en].filter((k) => !pt.has(k)).sort());
-report("IN PT BUT NOT EN", [...pt].filter((k) => !en.has(k)).sort());
+const report = (label, list) =>
+  console.log(`${label}: ${list.length}${list.length ? "\n  " + list.join("\n  ") : ""}`);
+
+const prefixOk = (set, k) => set.has(k) || [...set].some((x) => x.startsWith(k + "."));
+
+report("used but missing in EN", [...used].filter((k) => !prefixOk(en, k)).sort());
+report("used but missing in PT", [...used].filter((k) => !prefixOk(pt, k)).sort());
+report("in EN but not PT", [...en].filter((k) => !pt.has(k)).sort());
+report("in PT but not EN", [...pt].filter((k) => !en.has(k)).sort());
+console.log(`total keys: en=${en.size} pt=${pt.size}`);
