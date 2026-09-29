@@ -1,3 +1,4 @@
+import { useT } from "@/src/i18n";
 import { colors, fonts, radii, spacing } from "@/src/theme";
 import { useMemo, useState } from "react";
 import {
@@ -27,6 +28,7 @@ export function TextField({
   onBlur,
   ...rest
 }: Props) {
+  const t = useT();
   const [focused, setFocused] = useState(false);
   const accessoryId = useMemo(() => `rashmat-input-${Math.random().toString(36).slice(2)}`, []);
   const isNumeric =
@@ -63,7 +65,7 @@ export function TextField({
         <InputAccessoryView nativeID={accessoryId}>
           <View style={styles.accessory}>
             <Pressable onPress={Keyboard.dismiss} hitSlop={8}>
-              <Text style={styles.accessoryDone}>Done</Text>
+              <Text style={styles.accessoryDone}>{t("common.done")}</Text>
             </Pressable>
           </View>
         </InputAccessoryView>
