@@ -1,6 +1,7 @@
 export type AssessmentOption = {
   id: string;
-  label: string;
+  /** i18n key resolved by the assessment screen. */
+  labelKey: string;
   icon?: string;
 };
 
@@ -8,58 +9,65 @@ export type AssessmentStep =
   | {
       id: string;
       type: "single";
-      question: string;
+      /** i18n key resolved by the assessment screen. */
+      questionKey: string;
       options: AssessmentOption[];
       skippable?: boolean;
     }
   | {
       id: string;
       type: "gender";
-      question: string;
+      questionKey: string;
       skippable?: boolean;
     }
   | {
       id: string;
       type: "multi";
-      question: string;
+      questionKey: string;
       options: AssessmentOption[];
       skippable?: boolean;
     }
   | {
       id: string;
       type: "number";
-      question: string;
-      unit: string;
+      questionKey: string;
+      unitKey: string;
       min: number;
       max: number;
       defaultValue: number;
       skippable?: boolean;
     };
 
+const opt = (step: string, id: string, icon?: string): AssessmentOption => ({
+  id,
+  labelKey: `assessment.opt.${step}.${id}`,
+  icon,
+});
+
 export const ASSESSMENT_STEPS: AssessmentStep[] = [
   {
     id: "goal",
     type: "single",
-    question: "What’s your goal on the mats?",
+    questionKey: "assessment.q.goal",
     options: [
-      { id: "technique", label: "Sharpen technique", icon: "🎯" },
-      { id: "compete", label: "Prep for competition", icon: "🏆" },
-      { id: "fitness", label: "Conditioning for rolling", icon: "💨" },
-      { id: "belt", label: "Level up toward next belt", icon: "🥋" },
-      { id: "try", label: "Just exploring RASHMAT", icon: "📱" },
+      opt("goal", "technique", "🎯"),
+      opt("goal", "compete", "🏆"),
+      opt("goal", "fitness", "💨"),
+      opt("goal", "belt", "🥋"),
+      opt("goal", "try", "📱"),
     ],
   },
   {
     id: "gender",
     type: "gender",
-    question: "What’s your gender?",
+    questionKey: "assessment.q.gender",
     skippable: true,
   },
   {
     id: "age",
     type: "number",
-    question: "How old are you?",
-    unit: "years",
+    questionKey: "assessment.q.age",
+    unitKey: "assessment.unit.years",
     min: 13,
     max: 80,
     defaultValue: 24,
@@ -68,8 +76,8 @@ export const ASSESSMENT_STEPS: AssessmentStep[] = [
   {
     id: "weight",
     type: "number",
-    question: "What’s your weight?",
-    unit: "kg",
+    questionKey: "assessment.q.weight",
+    unitKey: "assessment.unit.kg",
     min: 40,
     max: 180,
     defaultValue: 70,
@@ -78,8 +86,8 @@ export const ASSESSMENT_STEPS: AssessmentStep[] = [
   {
     id: "height",
     type: "number",
-    question: "What’s your height?",
-    unit: "cm",
+    questionKey: "assessment.q.height",
+    unitKey: "assessment.unit.cm",
     min: 140,
     max: 220,
     defaultValue: 175,
@@ -88,137 +96,137 @@ export const ASSESSMENT_STEPS: AssessmentStep[] = [
   {
     id: "level",
     type: "single",
-    question: "What’s your training level?",
+    questionKey: "assessment.q.level",
     options: [
-      { id: "beginner", label: "White / beginner", icon: "🌱" },
-      { id: "intermediate", label: "Blue–purple", icon: "🔥" },
-      { id: "advanced", label: "Brown–black", icon: "⚡" },
-      { id: "pro", label: "Competition / pro", icon: "🏆" },
+      opt("level", "beginner", "🌱"),
+      opt("level", "intermediate", "🔥"),
+      opt("level", "advanced", "⚡"),
+      opt("level", "pro", "🏆"),
     ],
   },
   {
     id: "sport",
     type: "multi",
-    question: "Which arts do you train?",
+    questionKey: "assessment.q.sport",
     options: [
-      { id: "bjj", label: "Brazilian Jiu-Jitsu", icon: "🥋" },
-      { id: "nogi", label: "No-Gi / Submission", icon: "🤼" },
-      { id: "mma", label: "MMA", icon: "🥊" },
-      { id: "muay", label: "Muay Thai / striking", icon: "🦵" },
-      { id: "wrestling", label: "Wrestling", icon: "💪" },
-      { id: "other", label: "Other", icon: "✨" },
+      opt("sport", "bjj", "🥋"),
+      opt("sport", "nogi", "🤼"),
+      opt("sport", "mma", "🥊"),
+      opt("sport", "muay", "🦵"),
+      opt("sport", "wrestling", "💪"),
+      opt("sport", "other", "✨"),
     ],
   },
   {
     id: "experience",
     type: "single",
-    question: "How long have you been training?",
+    questionKey: "assessment.q.experience",
     options: [
-      { id: "new", label: "Just starting", icon: "1️⃣" },
-      { id: "months", label: "1–6 months", icon: "📆" },
-      { id: "year", label: "6–24 months", icon: "🗓️" },
-      { id: "years", label: "2+ years", icon: "⏳" },
+      opt("experience", "new", "1️⃣"),
+      opt("experience", "months", "📆"),
+      opt("experience", "year", "🗓️"),
+      opt("experience", "years", "⏳"),
     ],
   },
   {
     id: "equipment",
     type: "multi",
-    question: "What gear do you have?",
+    questionKey: "assessment.q.equipment",
     options: [
-      { id: "gi", label: "Gi", icon: "🥋" },
-      { id: "nogi", label: "Rashguard / shorts", icon: "👕" },
-      { id: "mats", label: "Home mats", icon: "🟦" },
-      { id: "pads", label: "Pads / bag", icon: "🥊" },
-      { id: "academy", label: "Academy access", icon: "🏢" },
+      opt("equipment", "gi", "🥋"),
+      opt("equipment", "nogi", "👕"),
+      opt("equipment", "mats", "🟦"),
+      opt("equipment", "pads", "🥊"),
+      opt("equipment", "academy", "🏢"),
     ],
   },
   {
     id: "location",
     type: "single",
-    question: "Where do you usually train?",
+    questionKey: "assessment.q.location",
     options: [
-      { id: "academy", label: "Academy / dojo", icon: "🥋" },
-      { id: "home", label: "At home", icon: "🏠" },
-      { id: "gym", label: "Academy / gym", icon: "🥋" },
-      { id: "outdoors", label: "Outdoors", icon: "🌳" },
+      opt("location", "academy", "🥋"),
+      opt("location", "home", "🏠"),
+      opt("location", "gym", "🥋"),
+      opt("location", "outdoors", "🌳"),
     ],
   },
   {
     id: "days",
     type: "single",
-    question: "How many days per week can you train?",
+    questionKey: "assessment.q.days",
     options: [
-      { id: "2", label: "1–2 days", icon: "2️⃣" },
-      { id: "3", label: "3 days", icon: "3️⃣" },
-      { id: "4", label: "4 days", icon: "4️⃣" },
-      { id: "5plus", label: "5+ days", icon: "5️⃣" },
+      opt("days", "2", "2️⃣"),
+      opt("days", "3", "3️⃣"),
+      opt("days", "4", "4️⃣"),
+      opt("days", "5plus", "5️⃣"),
     ],
   },
   {
     id: "duration",
     type: "single",
-    question: "Preferred session length?",
+    questionKey: "assessment.q.duration",
     options: [
-      { id: "20", label: "15–25 min", icon: "⏱️" },
-      { id: "45", label: "30–45 min", icon: "⌛" },
-      { id: "60", label: "45–60 min", icon: "🕐" },
-      { id: "90", label: "60+ min", icon: "🕒" },
+      opt("duration", "20", "⏱️"),
+      opt("duration", "45", "⌛"),
+      opt("duration", "60", "🕐"),
+      opt("duration", "90", "🕒"),
     ],
   },
   {
     id: "time",
     type: "single",
-    question: "When do you prefer to train?",
+    questionKey: "assessment.q.time",
     options: [
-      { id: "morning", label: "Morning", icon: "🌅" },
-      { id: "lunch", label: "Lunch break", icon: "☀️" },
-      { id: "evening", label: "Evening", icon: "🌆" },
-      { id: "night", label: "Night", icon: "🌙" },
-      { id: "flex", label: "Flexible", icon: "🔄" },
+      opt("time", "morning", "🌅"),
+      opt("time", "lunch", "☀️"),
+      opt("time", "evening", "🌆"),
+      opt("time", "night", "🌙"),
+      opt("time", "flex", "🔄"),
     ],
   },
   {
     id: "focus",
     type: "single",
-    question: "What should we prioritize first?",
+    questionKey: "assessment.q.focus",
     options: [
-      { id: "technique", label: "Technique & detail", icon: "🎯" },
-      { id: "live", label: "Live rounds / sparring", icon: "🔥" },
-      { id: "conditioning", label: "Conditioning", icon: "💨" },
-      { id: "recovery", label: "Recovery & mobility", icon: "🧘" },
+      opt("focus", "technique", "🎯"),
+      opt("focus", "live", "🔥"),
+      opt("focus", "conditioning", "💨"),
+      opt("focus", "recovery", "🧘"),
     ],
   },
   {
     id: "injuries",
     type: "single",
-    question: "Any current injuries or limits?",
+    questionKey: "assessment.q.injuries",
     skippable: true,
     options: [
-      { id: "none", label: "No limitations", icon: "✅" },
-      { id: "shoulder", label: "Shoulders / arms", icon: "🦴" },
-      { id: "back", label: "Back / neck", icon: "🧘" },
-      { id: "knees", label: "Knees / legs", icon: "🦵" },
-      { id: "other", label: "Something else", icon: "🩹" },
+      opt("injuries", "none", "✅"),
+      opt("injuries", "shoulder", "🦴"),
+      opt("injuries", "back", "🧘"),
+      opt("injuries", "knees", "🦵"),
+      opt("injuries", "other", "🩹"),
     ],
   },
   {
     id: "coach",
     type: "single",
-    question: "How do you want to train on RASHMAT?",
+    questionKey: "assessment.q.coach",
     options: [
-      { id: "creator", label: "Follow a creator program", icon: "⭐" },
-      { id: "mix", label: "Mix of creators + structure", icon: "🔀" },
-      { id: "explore", label: "Browse and pick sessions", icon: "🧭" },
+      opt("coach", "creator", "⭐"),
+      opt("coach", "mix", "🔀"),
+      opt("coach", "explore", "🧭"),
     ],
   },
   {
     id: "notifications",
     type: "single",
-    question: "Want training reminders?",
+    questionKey: "assessment.q.notifications",
     options: [
-      { id: "yes", label: "Yes, keep me on track", icon: "🔔" },
-      { id: "light", label: "Only important ones", icon: "🔕" },
-      { id: "no", label: "Not right now", icon: "🚫" },
+      opt("notifications", "yes", "🔔"),
+      opt("notifications", "light", "🔕"),
+      opt("notifications", "no", "🚫"),
     ],
   },
 ];

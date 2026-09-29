@@ -88,7 +88,7 @@ export async function awardMedal(medalId: string): Promise<{ xp: number; title?:
   await saveLocalMedal(medalId);
   if (!isSupabaseConfigured) {
     const def = MEDAL_DEFS.find((m) => m.id === medalId);
-    return { xp: def?.xpReward ?? 0, title: def?.title };
+    return { xp: def?.xpReward ?? 0, title: def?.titleKey };
   }
   const { data, error } = await supabase.rpc("award_medal", {
     p_medal_id: medalId,
@@ -190,7 +190,7 @@ export async function evaluateAndAwardMedals(
     if (result.xp > 0 || !owned.has(id)) {
       awarded.push({
         id,
-        title: result.title ?? def?.title ?? id,
+        title: result.title ?? def?.titleKey ?? id,
         xp: result.xp,
       });
     }

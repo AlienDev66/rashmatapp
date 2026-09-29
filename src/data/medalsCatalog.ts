@@ -4,8 +4,9 @@ export type MedalCategory = "training" | "veteran" | "growth";
 
 export type MedalDef = {
   id: string;
-  title: string;
-  summary: string;
+  /** i18n keys resolved by the screens that render medals. */
+  titleKey: string;
+  summaryKey: string;
   category: MedalCategory;
   xpReward: number;
   iconKey: string;
@@ -14,88 +15,88 @@ export type MedalDef = {
 export const MEDAL_DEFS: MedalDef[] = [
   {
     id: "day-one",
-    title: "Day One Member",
-    summary: "Joined RASHMAT in the early window.",
+    titleKey: "medals.defs.dayOne.title",
+    summaryKey: "medals.defs.dayOne.summary",
     category: "veteran",
     xpReward: 1000,
     iconKey: "dayone",
   },
   {
     id: "first-session",
-    title: "First Mat",
-    summary: "Complete your first training session.",
+    titleKey: "medals.defs.firstSession.title",
+    summaryKey: "medals.defs.firstSession.summary",
     category: "training",
     xpReward: 250,
     iconKey: "mat",
   },
   {
     id: "favorite-camp",
-    title: "Saved Camp",
-    summary: "Favorite a program to train later.",
+    titleKey: "medals.defs.favoriteCamp.title",
+    summaryKey: "medals.defs.favoriteCamp.summary",
     category: "training",
     xpReward: 100,
     iconKey: "star",
   },
   {
     id: "follow-1",
-    title: "Corner Crew",
-    summary: "Follow your first creator on RASHMAT.",
+    titleKey: "medals.defs.follow1.title",
+    summaryKey: "medals.defs.follow1.summary",
     category: "growth",
     xpReward: 150,
     iconKey: "users",
   },
   {
     id: "week-warrior",
-    title: "Week Warrior",
-    summary: "Log 4 sessions in 7 days.",
+    titleKey: "medals.defs.weekWarrior.title",
+    summaryKey: "medals.defs.weekWarrior.summary",
     category: "training",
     xpReward: 500,
     iconKey: "flame",
   },
   {
     id: "streak-3",
-    title: "On The Mats",
-    summary: "Train 3 days in a row.",
+    titleKey: "medals.defs.streak3.title",
+    summaryKey: "medals.defs.streak3.summary",
     category: "training",
     xpReward: 350,
     iconKey: "streak",
   },
   {
     id: "streak-7",
-    title: "Locked In",
-    summary: "7-day training streak.",
+    titleKey: "medals.defs.streak7.title",
+    summaryKey: "medals.defs.streak7.summary",
     category: "training",
     xpReward: 750,
     iconKey: "lock",
   },
   {
     id: "camp-complete",
-    title: "Camp Complete",
-    summary: "Finish every session in a camp.",
+    titleKey: "medals.defs.campComplete.title",
+    summaryKey: "medals.defs.campComplete.summary",
     category: "training",
     xpReward: 1000,
     iconKey: "trophy",
   },
   {
     id: "sessions-10",
-    title: "Ten Sessions",
-    summary: "Complete 10 sessions total.",
+    titleKey: "medals.defs.sessions10.title",
+    summaryKey: "medals.defs.sessions10.summary",
     category: "training",
     xpReward: 600,
     iconKey: "ten",
   },
   {
     id: "sessions-25",
-    title: "Mat Regular",
-    summary: "Complete 25 sessions total.",
+    titleKey: "medals.defs.sessions25.title",
+    summaryKey: "medals.defs.sessions25.summary",
     category: "training",
     xpReward: 1200,
     iconKey: "shield",
   },
   {
     id: "referral-1",
-    title: "Training Partner",
-    summary: "Invite a friend who completes a session.",
+    titleKey: "medals.defs.referral1.title",
+    summaryKey: "medals.defs.referral1.summary",
     category: "growth",
     xpReward: 400,
     iconKey: "partner",
