@@ -8,7 +8,7 @@ import {
   saveSessionProgress,
 } from "@/src/data/progress";
 import { useWorkoutSession } from "@/src/hooks/useResource";
-import { tipForDrill } from "@/src/lib/drillTips";
+import { tipKeyForDrill } from "@/src/lib/drillTips";
 import {
   estimateSessionXp,
   formatRepsLabel,
@@ -112,7 +112,7 @@ export default function SessionPlayerScreen() {
       if (nextExercise) {
         return {
           title: nextExercise.name,
-          meta: formatRepsLabel(parseRepScheme(nextExercise.reps)[0] ?? 8, nextExercise.reps),
+          meta: formatRepsLabel(parseRepScheme(nextExercise.reps)[0] ?? 8, nextExercise.reps, t),
         };
       }
       return { title: t("session.sessionComplete"), meta: t("session.finishLogXp") };
@@ -120,7 +120,7 @@ export default function SessionPlayerScreen() {
     if (!isLastSet) {
       return {
         title: t("session.nextSet"),
-        meta: formatRepsLabel(scheme[setIndex + 1] ?? targetReps, exercise?.reps),
+        meta: formatRepsLabel(scheme[setIndex + 1] ?? targetReps, exercise?.reps, t),
       };
     }
     if (nextExercise) {
@@ -382,7 +382,7 @@ export default function SessionPlayerScreen() {
                 <Text style={styles.stepCount}>
                   {exerciseIndex + 1}/{session.exercises.length}
                 </Text>
-                <Text style={styles.stepLabel}>Drill</Text>
+                <Text style={styles.stepLabel}>{t("session.drill")}</Text>
               </View>
             </View>
 
@@ -437,7 +437,7 @@ export default function SessionPlayerScreen() {
                       }}
                     >
                       <Lightbulb color={colors.accent} size={16} />
-                      <Text style={styles.cueBtnText}>Tip</Text>
+                      <Text style={styles.cueBtnText}>{t("session.tip")}</Text>
                     </Pressable>
                     <Pressable
                       style={styles.cueBtn}
@@ -447,7 +447,7 @@ export default function SessionPlayerScreen() {
                       }}
                     >
                       <List color={colors.accent} size={16} />
-                      <Text style={styles.cueBtnText}>List</Text>
+                      <Text style={styles.cueBtnText}>{t("session.list")}</Text>
                     </Pressable>
                   </View>
                   <View style={styles.setRow}>
@@ -470,7 +470,7 @@ export default function SessionPlayerScreen() {
                     })}
                     {"  ·  "}
                     <Text style={{ color: colors.accent }}>
-                      {formatRepsLabel(targetReps, exercise.reps)}
+                      {formatRepsLabel(targetReps, exercise.reps, t)}
                     </Text>
                   </Text>
                 </View>
@@ -488,9 +488,9 @@ export default function SessionPlayerScreen() {
                     ]}
                   />
                   <Text style={styles.restClock}>{restLeft}</Text>
-                  <Text style={styles.restUnit}>sec</Text>
+                  <Text style={styles.restUnit}>{t("session.seconds")}</Text>
                 </View>
-                <Text style={styles.upNextLabel}>UP NEXT</Text>
+                <Text style={styles.upNextLabel}>{t("session.upNext")}</Text>
                 <Text style={styles.upNextTitle} numberOfLines={2}>
                   {upNext.title}
                 </Text>
@@ -530,7 +530,7 @@ export default function SessionPlayerScreen() {
                     placeholderTextColor={colors.textDim}
                   />
                   <Text style={styles.prHint}>
-                    Best {maxReps != null ? maxReps : "—"}
+                    {t("session.best", { value: maxReps != null ? maxReps : "—" })}
                   </Text>
                 </View>
               ) : (
@@ -546,7 +546,7 @@ export default function SessionPlayerScreen() {
                   </Pressable>
                 ) : (
                   <View style={styles.nextPreview}>
-                    <Text style={styles.nextPreviewLabel}>Next</Text>
+                    <Text style={styles.nextPreviewLabel}>{t("session.next")}</Text>
                     <Text style={styles.nextPreviewTitle} numberOfLines={1}>
                       {upNext.title}
                     </Text>
@@ -599,9 +599,11 @@ export default function SessionPlayerScreen() {
               <View style={[styles.modalBackdrop, { justifyContent: "center" }]}>
                 <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowTip(false)} />
                 <View style={styles.tipCard}>
-                  <Text style={styles.tipKicker}>FORM CUE</Text>
+                  <Text style={styles.tipKicker}>{t("session.formCue")}</Text>
                   <Text style={styles.tipTitle}>{exercise.name}</Text>
-                  <Text style={styles.tipBody}>{tipForDrill(exercise.name, exercise.reps)}</Text>
+                  <Text style={styles.tipBody}>
+                    {t(tipKeyForDrill(exercise.name, exercise.reps))}
+                  </Text>
                   <Pressable style={styles.tipClose} onPress={() => setShowTip(false)}>
                     <Text style={styles.tipCloseText}>{t("sessionUi.gotIt")}</Text>
                   </Pressable>
