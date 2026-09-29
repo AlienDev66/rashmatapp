@@ -17,12 +17,18 @@ export function isRoundScheme(reps: string | null | undefined) {
   return !!reps && /rounds?/i.test(reps);
 }
 
-export function formatRepsLabel(target: number, rawReps?: string | null) {
+type Translate = (key: string, params?: Record<string, string | number>) => string;
+
+export function formatRepsLabel(
+  target: number,
+  rawReps: string | null | undefined,
+  t: Translate,
+) {
   if (isRoundScheme(rawReps)) {
     const mins = rawReps?.match(/×\s*(\d+)/)?.[1] ?? rawReps?.match(/(\d+)\s*min/i)?.[1];
-    return mins ? `${mins} min` : "Round";
+    return mins ? t("session.minutesLabel", { n: mins }) : t("session.roundLabel");
   }
-  return `${target} Reps`;
+  return t("session.repsLabel", { n: target });
 }
 
 /** Client-side XP estimate (server recomputes on complete). */
