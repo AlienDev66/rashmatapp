@@ -69,8 +69,8 @@ export default function SignUpScreen() {
       <View style={styles.brand}>
         <BrandMark size={56} variant="yellow" />
       </View>
-      <Text style={styles.title}>Sign Up For Free</Text>
-      <Text style={styles.sub}>Quickly make your account in 1 minute</Text>
+      <Text style={styles.title}>{t("authExtra.signUpFreeTitle")}</Text>
+      <Text style={styles.sub}>{t("authExtra.signUpFreeSub")}</Text>
 
       <View style={styles.form}>
         <TextField
@@ -99,9 +99,9 @@ export default function SignUpScreen() {
       </View>
 
       <Text style={styles.footer}>
-        Already have an account?{" "}
+        {t("authExtra.haveAccount")}{" "}
         <Text style={styles.link} onPress={() => router.push("/(auth)/sign-in")}>
-          Sign In.
+          {t("authExtra.signInLink")}
         </Text>
       </Text>
     </DismissKeyboard>

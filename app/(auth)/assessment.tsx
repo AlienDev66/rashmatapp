@@ -88,7 +88,7 @@ export default function AssessmentScreen() {
         </View>
       </View>
 
-      <Text style={styles.question}>{step.question}</Text>
+      <Text style={styles.question}>{t(step.questionKey)}</Text>
 
       <ScrollView
         style={{ flex: 1 }}
@@ -128,7 +128,9 @@ export default function AssessmentScreen() {
                   style={[styles.option, on && styles.optionOn]}
                 >
                   <Text style={styles.optionIcon}>{opt.icon}</Text>
-                  <Text style={[styles.optionLabel, on && styles.optionLabelOn]}>{opt.label}</Text>
+                  <Text style={[styles.optionLabel, on && styles.optionLabelOn]}>
+                    {t(opt.labelKey)}
+                  </Text>
                   <View style={[styles.radio, on && styles.radioOn]}>
                     {on ? <View style={styles.radioDot} /> : null}
                   </View>
@@ -145,7 +147,7 @@ export default function AssessmentScreen() {
             </Pressable>
             <View style={styles.numberCenter}>
               <Text style={styles.numberValue}>{numberValue}</Text>
-              <Text style={styles.numberUnit}>{step.unit}</Text>
+              <Text style={styles.numberUnit}>{t(step.unitKey)}</Text>
             </View>
             <Pressable style={styles.bump} onPress={() => bumpNumber(1)}>
               <Text style={styles.bumpText}>+</Text>

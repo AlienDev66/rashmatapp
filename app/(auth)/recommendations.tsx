@@ -96,8 +96,12 @@ export default function RecommendationsScreen() {
                   colors={["transparent", "rgba(20,17,17,0.92)"]}
                   style={StyleSheet.absoluteFill}
                 />
-                {index === 0 ? <Text style={styles.badge}>START HERE</Text> : null}
-                {p.isPremium ? <Text style={styles.premiumBadge}>PREMIUM</Text> : null}
+                {index === 0 ? (
+                  <Text style={styles.badge}>{t("authExtra.startHere")}</Text>
+                ) : null}
+                {p.isPremium ? (
+                  <Text style={styles.premiumBadge}>{t("authExtra.premiumBadge")}</Text>
+                ) : null}
                 <Text style={styles.cardTitle}>{p.title}</Text>
                 <Text style={styles.cardDesc} numberOfLines={2}>
                   {p.description}

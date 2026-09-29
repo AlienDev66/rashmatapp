@@ -12,8 +12,8 @@ export default function QuoteScreen() {
   const quote = quotes[0];
 
   useEffect(() => {
-    const t = setTimeout(() => router.replace("/(tabs)"), 2800);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => router.replace("/(tabs)"), 2800);
+    return () => clearTimeout(timer);
   }, []);
 
   return (

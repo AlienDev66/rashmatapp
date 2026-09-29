@@ -44,7 +44,7 @@ export default function ForgotPasswordScreen() {
       style={[styles.root, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 }]}
     >
       <BackButton />
-      <Text style={styles.title}>Forgot Password</Text>
+      <Text style={styles.title}>{t("authExtra.forgotTitle")}</Text>
       <Text style={styles.sub}>
         Enter the email linked to your RASHMAT account and we&apos;ll send a reset link.
       </Text>

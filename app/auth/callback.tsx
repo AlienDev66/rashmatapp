@@ -1,3 +1,4 @@
+import { useT } from "@/src/i18n";
 import { createSessionFromUrl } from "@/src/lib/auth";
 import { colors, fonts } from "@/src/theme";
 import * as Linking from "expo-linking";
@@ -11,8 +12,9 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
  * Builds: rashmat://auth/callback
  */
 export default function AuthCallbackScreen() {
+  const t = useT();
   const params = useLocalSearchParams();
-  const [message, setMessage] = useState("Confirming…");
+  const [messageKey, setMessageKey] = useState("authCallback.confirming");
 
   useEffect(() => {
     let cancelled = false;
@@ -26,7 +28,7 @@ export default function AuthCallbackScreen() {
         router.replace("/(tabs)");
         return;
       }
-      setMessage("Could not complete sign-in. Try again.");
+      setMessageKey("authCallback.failed");
       setTimeout(() => router.replace("/(auth)/sign-in"), 1600);
     };
 
@@ -64,7 +66,7 @@ export default function AuthCallbackScreen() {
         finish(null, false);
       } catch {
         if (!cancelled) {
-          setMessage("Link expired or invalid.");
+          setMessageKey("authCallback.expired");
           setTimeout(() => router.replace("/(auth)/sign-in"), 1600);
         }
       }
@@ -79,7 +81,7 @@ export default function AuthCallbackScreen() {
   return (
     <View style={styles.root}>
       <ActivityIndicator color={colors.accent} />
-      <Text style={styles.text}>{message}</Text>
+      <Text style={styles.text}>{t(messageKey)}</Text>
     </View>
   );
 }
