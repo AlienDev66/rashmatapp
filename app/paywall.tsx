@@ -11,16 +11,16 @@ import { useT } from "@/src/i18n";
 const PLANS = [
   {
     id: "monthly",
-    name: "Pro Monthly",
+    nameKey: "paywall.planMonthly",
     price: "€14.99",
-    period: "/month",
+    periodKey: "paywall.perMonth",
     perkKeys: ["perkAllPrograms", "perkPlayer", "perkProgress"],
   },
   {
     id: "yearly",
-    name: "Pro Yearly",
+    nameKey: "paywall.planYearly",
     price: "€119",
-    period: "/year",
+    periodKey: "paywall.perYear",
     perkKeys: ["perkTwoMonths", "perkPriority", "perkExclusive"],
   },
 ];
@@ -50,14 +50,14 @@ export default function PaywallScreen() {
               style={[styles.plan, on && styles.planOn]}
             >
               <View style={styles.planTop}>
-                <Text style={styles.planName}>{p.name}</Text>
+                <Text style={styles.planName}>{t(p.nameKey)}</Text>
                 <View style={[styles.radio, on && styles.radioOn]}>
                   {on ? <View style={styles.dot} /> : null}
                 </View>
               </View>
               <Text style={styles.price}>
                 {p.price}
-                <Text style={styles.period}>{p.period}</Text>
+                <Text style={styles.period}>{t(p.periodKey)}</Text>
               </Text>
               {p.perkKeys.map((perkKey) => (
                 <View key={perkKey} style={styles.perk}>

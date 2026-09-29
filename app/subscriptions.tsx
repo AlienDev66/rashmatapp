@@ -19,7 +19,7 @@ export default function SubscriptionsScreen() {
 
       <View style={styles.card}>
         <Text style={styles.badge}>{t("screens.active")}</Text>
-        <Text style={styles.plan}>Pro Yearly</Text>
+        <Text style={styles.plan}>{t("paywall.planYearly")}</Text>
         <Text style={styles.meta}>{t("extra.renewsDemo")}</Text>
       </View>
 
