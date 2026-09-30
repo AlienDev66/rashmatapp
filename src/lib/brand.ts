@@ -1,10 +1,10 @@
 /** Canonical RASHMAT brand URLs & handles (product copy). */
 export const brand = {
   name: "RASHMAT",
-  domain: "rashmat.app",
-  url: "https://rashmat.app",
-  email: "hello@rashmat.app",
-  supportEmail: "support@rashmat.app",
+  domain: "rashmat.com",
+  url: "https://rashmat.com",
+  email: "hello@rashmat.com",
+  supportEmail: "support@rashmat.com",
   scheme: "rashmat",
   community: {
     discord: "https://discord.gg/rashmat",

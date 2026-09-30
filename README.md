@@ -20,7 +20,7 @@ bun run ios   # or android / web / start
 
 Apply SQL migrations under `supabase/migrations/` in order (through `20260328000000_showcase_program_seed.sql` for the full Guard Retention showcase).
 
-Brand: **RASHMAT** · [rashmat.app](https://rashmat.app) · [@rashmatapp](https://www.instagram.com/rashmatapp/)
+Brand: **RASHMAT** · [rashmat.com](https://rashmat.com) · [@rashmatapp](https://www.instagram.com/rashmatapp/)
 
 ## Architecture
 
