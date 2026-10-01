@@ -15,7 +15,7 @@ export default function NotFoundScreen() {
           title={t("screens.screenNotFound")}
           message={t("screens.routeMissing")}
           actionLabel={t("screens.goHome")}
-          onAction={() => router.replace("/")}
+          onAction={() => router.replace("/(tabs)/home")}
         />
       </View>
     </>
