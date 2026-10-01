@@ -1,5 +1,7 @@
 import { useT } from "@/src/i18n";
 import { createSessionFromUrl } from "@/src/lib/auth";
+import { hrefAfterAuth } from "@/src/lib/postAuthRoute";
+import { useAuth } from "@/src/providers/AuthProvider";
 import { colors, fonts } from "@/src/theme";
 import * as Linking from "expo-linking";
 import { router, useLocalSearchParams } from "expo-router";
@@ -14,18 +16,21 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 export default function AuthCallbackScreen() {
   const t = useT();
   const params = useLocalSearchParams();
+  const { refreshProfile } = useAuth();
   const [messageKey, setMessageKey] = useState("authCallback.confirming");
 
   useEffect(() => {
     let cancelled = false;
 
-    const finish = (type: string | null, session: boolean) => {
+    const finish = async (type: string | null, session: boolean) => {
       if (type === "recovery") {
         router.replace("/(auth)/reset-password");
         return;
       }
       if (session || type === "signup" || type === "email") {
-        router.replace("/(tabs)");
+        const profile = await refreshProfile();
+        if (cancelled) return;
+        router.replace(hrefAfterAuth(profile));
         return;
       }
       setMessageKey("authCallback.failed");
@@ -50,7 +55,7 @@ export default function AuthCallbackScreen() {
           const result = await createSessionFromUrl(url);
           if (cancelled) return;
           if (result.session || result.type === "recovery" || result.type === "signup") {
-            finish(result.type, Boolean(result.session));
+            await finish(result.type, Boolean(result.session));
             return;
           }
         }
@@ -59,11 +64,11 @@ export default function AuthCallbackScreen() {
         if (query.code || query.token_hash || query.access_token) {
           const result = await createSessionFromUrl(built);
           if (cancelled) return;
-          finish(result.type, Boolean(result.session));
+          await finish(result.type, Boolean(result.session));
           return;
         }
 
-        finish(null, false);
+        await finish(null, false);
       } catch {
         if (!cancelled) {
           setMessageKey("authCallback.expired");
@@ -76,7 +81,7 @@ export default function AuthCallbackScreen() {
     return () => {
       cancelled = true;
     };
-  }, [params]);
+  }, [params, refreshProfile]);
 
   return (
     <View style={styles.root}>

@@ -1,4 +1,3 @@
-import { BackButton } from "@/src/components/ui/BackButton";
 import { QueryGate } from "@/src/components/ui/QueryGate";
 import { Screen } from "@/src/components/ui/Screen";
 import { useCatalog } from "@/src/hooks/useCatalog";
@@ -17,8 +16,7 @@ export default function ProgramsScreen() {
   return (
     <Screen padded={false}>
       <View style={styles.top}>
-        <BackButton onPress={() => router.push("/(tabs)")} />
-        <View style={{ flex: 1, marginLeft: 12 }}>
+        <View style={{ flex: 1 }}>
           <Text style={styles.title}>{t("programsTab.title")}</Text>
           <Text style={styles.sub}>{t("programsTab.sub")}</Text>
         </View>
