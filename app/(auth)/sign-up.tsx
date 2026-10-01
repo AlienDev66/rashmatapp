@@ -59,7 +59,7 @@ export default function SignUpScreen() {
       );
       return;
     }
-    router.push("/(auth)/assessment");
+    router.replace("/(auth)/assessment");
   };
 
   return (

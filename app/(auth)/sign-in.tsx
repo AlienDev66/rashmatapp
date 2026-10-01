@@ -4,6 +4,7 @@ import { Button } from "@/src/components/ui/Button";
 import { DismissKeyboard } from "@/src/components/ui/DismissKeyboard";
 import { TextField } from "@/src/components/ui/TextField";
 import { useT } from "@/src/i18n";
+import { replaceAfterAuth } from "@/src/lib/postAuthRoute";
 import { useAuth } from "@/src/providers/AuthProvider";
 import { colors, fonts, spacing } from "@/src/theme";
 import { router } from "expo-router";
@@ -13,7 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function SignInScreen() {
   const insets = useSafeAreaInsets();
-  const { signInWithEmail, signInWithOAuth, configured } = useAuth();
+  const { signInWithEmail, signInWithOAuth, configured, refreshProfile } = useAuth();
   const t = useT();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,21 +26,26 @@ export default function SignInScreen() {
       return;
     }
     setBusy(true);
-    const { error } = await signInWithEmail(email.trim(), password);
+    const { error, profile } = await signInWithEmail(email.trim(), password);
     setBusy(false);
     if (error) {
       Alert.alert(t("auth.failedTitle"), error);
       return;
     }
-    router.replace("/(tabs)");
+    replaceAfterAuth(profile);
   };
 
   const onOAuth = async (provider: "google" | "apple") => {
     setBusy(true);
-    const { error } = await signInWithOAuth(provider);
+    const { error, profile } = await signInWithOAuth(provider);
     setBusy(false);
-    if (error) Alert.alert(t("auth.failedTitle"), error);
-    else if (configured) router.replace("/(tabs)");
+    if (error) {
+      Alert.alert(t("auth.failedTitle"), error);
+      return;
+    }
+    if (!configured) return;
+    const resolved = profile ?? (await refreshProfile());
+    replaceAfterAuth(resolved);
   };
 
   return (
