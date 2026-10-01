@@ -49,11 +49,16 @@ type AuthContextValue = {
   profile: Profile | null;
   loading: boolean;
   configured: boolean;
-  refreshProfile: () => Promise<void>;
+  refreshProfile: () => Promise<Profile | null>;
   updateProfile: (patch: ProfileUpdate) => Promise<{ error: string | null }>;
-  signInWithEmail: (email: string, password: string) => Promise<{ error: string | null }>;
+  signInWithEmail: (
+    email: string,
+    password: string,
+  ) => Promise<{ error: string | null; profile: Profile | null }>;
   signUpWithEmail: (email: string, password: string) => Promise<SignUpResult>;
-  signInWithOAuth: (provider: "google" | "apple") => Promise<{ error: string | null }>;
+  signInWithOAuth: (
+    provider: "google" | "apple",
+  ) => Promise<{ error: string | null; profile: Profile | null }>;
   resetPassword: (email: string) => Promise<{ error: string | null }>;
   updatePassword: (password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
@@ -66,10 +71,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const loadProfile = useCallback(async (userId: string) => {
+  const loadProfile = useCallback(async (userId: string): Promise<Profile | null> => {
     if (!isSupabaseConfigured) {
       setProfile(null);
-      return;
+      return null;
     }
     const { data, error } = await supabase
       .from("profiles")
@@ -80,12 +85,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) {
       if (__DEV__) console.warn("[RASHMAT] loadProfile", error.message);
       setProfile(null);
-      return;
+      return null;
     }
 
     if (data) {
-      setProfile(data as Profile);
-      return;
+      const row = data as Profile;
+      setProfile(row);
+      return row;
     }
 
     // Account may predate the trigger — create the row
@@ -101,13 +107,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (insertError) {
       if (__DEV__) console.warn("[RASHMAT] ensure profile", insertError.message);
       setProfile(null);
-      return;
+      return null;
     }
-    setProfile(created as Profile);
+    const row = created as Profile;
+    setProfile(row);
+    return row;
   }, []);
 
-  const refreshProfile = useCallback(async () => {
-    if (session?.user?.id) await loadProfile(session.user.id);
+  const refreshProfile = useCallback(async (): Promise<Profile | null> => {
+    if (session?.user?.id) return loadProfile(session.user.id);
+    const { data } = await supabase.auth.getSession();
+    if (data.session?.user?.id) return loadProfile(data.session.user.id);
+    return null;
   }, [loadProfile, session?.user?.id]);
 
   const updateProfile = useCallback(
@@ -216,11 +227,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithEmail = useCallback(async (email: string, password: string) => {
     if (!isSupabaseConfigured) {
-      return { error: "Add EXPO_PUBLIC_SUPABASE_URL and ANON_KEY to .env" };
+      return { error: "Add EXPO_PUBLIC_SUPABASE_URL and ANON_KEY to .env", profile: null };
     }
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error?.message ?? null };
-  }, []);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { error: error.message, profile: null };
+    setSession(data.session);
+    const profile = data.session?.user ? await loadProfile(data.session.user.id) : null;
+    return { error: null, profile };
+  }, [loadProfile]);
 
   const signUpWithEmail = useCallback(async (email: string, password: string) => {
     if (!isSupabaseConfigured) {
@@ -237,36 +251,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     if (error) return { error: error.message };
     // Session present = email confirm disabled (or already confirmed)
-    if (data.session) return { error: null };
+    if (data.session) {
+      setSession(data.session);
+      if (data.session.user) await loadProfile(data.session.user.id);
+      return { error: null };
+    }
     return {
       error: null,
       needsEmailConfirm: true as const,
       redirectTo,
     };
-  }, []);
+  }, [loadProfile]);
 
   const signInWithOAuth = useCallback(async (provider: "google" | "apple") => {
     if (!isSupabaseConfigured) {
-      return { error: "Add EXPO_PUBLIC_SUPABASE_URL and ANON_KEY to .env" };
+      return { error: "Add EXPO_PUBLIC_SUPABASE_URL and ANON_KEY to .env", profile: null };
     }
     const redirectTo = getAuthRedirectUri();
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo, skipBrowserRedirect: true },
     });
-    if (error) return { error: error.message };
-    if (!data.url) return { error: "No OAuth URL returned" };
+    if (error) return { error: error.message, profile: null };
+    if (!data.url) return { error: "No OAuth URL returned", profile: null };
 
     const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
     if (result.type === "success" && result.url) {
       try {
-        await createSessionFromUrl(result.url);
+        const sessionResult = await createSessionFromUrl(result.url);
+        const nextSession = sessionResult.session;
+        if (nextSession) {
+          setSession(nextSession);
+          const profile = nextSession.user
+            ? await loadProfile(nextSession.user.id)
+            : null;
+          return { error: null, profile };
+        }
       } catch (e) {
-        return { error: e instanceof Error ? e.message : "OAuth failed" };
+        return {
+          error: e instanceof Error ? e.message : "OAuth failed",
+          profile: null,
+        };
       }
     }
-    return { error: null };
-  }, []);
+    // Browser cancelled or no session yet — fall back to current session
+    const { data: cur } = await supabase.auth.getSession();
+    if (cur.session?.user) {
+      setSession(cur.session);
+      const profile = await loadProfile(cur.session.user.id);
+      return { error: null, profile };
+    }
+    return { error: null, profile: null };
+  }, [loadProfile]);
 
   const resetPassword = useCallback(async (email: string) => {
     if (!isSupabaseConfigured) {
