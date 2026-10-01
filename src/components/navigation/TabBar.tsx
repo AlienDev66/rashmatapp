@@ -9,7 +9,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const ICONS = {
-  index: HomeIcon,
+  home: HomeIcon,
   creators: CreatorsIcon,
   programs: ProgramsIcon,
   more: MoreIcon,

@@ -121,7 +121,7 @@ export default function ProgramDetailScreen() {
       if (firstId) {
         router.replace(`/workout/${firstId}`);
       } else {
-        router.replace("/(tabs)");
+        router.replace("/(tabs)/home");
       }
     } catch (e) {
       Alert.alert(
@@ -144,7 +144,7 @@ export default function ProgramDetailScreen() {
       router.push(`/workout/${firstId}`);
       return;
     }
-    router.replace("/(tabs)");
+    router.replace("/(tabs)/home");
   };
 
   const onDragEnd = useCallback(
