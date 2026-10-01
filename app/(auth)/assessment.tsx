@@ -41,8 +41,11 @@ export default function AssessmentScreen() {
   };
 
   const goBack = () => {
-    if (stepIndex > 0) setCurrentStep(stepIndex - 1);
-    else router.back();
+    if (stepIndex > 0) {
+      setCurrentStep(stepIndex - 1);
+      return;
+    }
+    // Opened via replace — no stack. Stay on step 0 (no GO_BACK crash).
   };
 
   const setSingle = (id: string) => setAnswers((a) => ({ ...a, [step.id]: id }));
@@ -81,13 +84,14 @@ export default function AssessmentScreen() {
   return (
     <View style={[styles.root, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]}>
       <View style={styles.header}>
-        <BackButton onPress={goBack} />
+        {stepIndex > 0 ? <BackButton onPress={goBack} /> : <View style={styles.headerSpacer} />}
         <Text style={styles.headerTitle}>{t("authExtra.assessmentTitle")}</Text>
         <View style={styles.step}>
           <Text style={styles.stepText}>{progress}</Text>
         </View>
       </View>
 
+      <Text style={styles.kicker}>{t("authExtra.assessmentKicker")}</Text>
       <Text style={styles.question}>{t(step.questionKey)}</Text>
 
       <ScrollView
@@ -208,6 +212,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   headerTitle: { color: colors.white, fontFamily: fonts.poppinsBold, fontSize: 16 },
+  headerSpacer: { width: 40, height: 40 },
   step: {
     backgroundColor: colors.surface,
     paddingHorizontal: 12,
@@ -215,6 +220,14 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
   },
   stepText: { color: colors.white, fontFamily: fonts.poppinsSemiBold, fontSize: 12 },
+  kicker: {
+    color: colors.accent,
+    fontFamily: fonts.poppinsSemiBold,
+    fontSize: 12,
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    marginBottom: 8,
+  },
   question: {
     color: colors.white,
     fontFamily: fonts.poppinsBold,

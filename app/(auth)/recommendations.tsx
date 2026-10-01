@@ -2,6 +2,8 @@ import { Button } from "@/src/components/ui/Button";
 import { EmptyState } from "@/src/components/ui/EmptyState";
 import { enrollProgram } from "@/src/data/progress";
 import { useCatalog } from "@/src/hooks/useCatalog";
+import { useT } from "@/src/i18n";
+import { enterAppHome } from "@/src/lib/postAuthRoute";
 import { useAuth } from "@/src/providers/AuthProvider";
 import { colors, fonts, radii, spacing } from "@/src/theme";
 import { Image } from "expo-image";
@@ -10,7 +12,6 @@ import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useT } from "@/src/i18n";
 
 const FLAGSHIP_ID = "mat-foundations";
 
@@ -42,12 +43,12 @@ export default function RecommendationsScreen() {
   const startCamp = async (programId: string) => {
     if (!user) {
       Alert.alert(t("home.signInRequired"), t("home.signInBody"));
-      router.push("/(auth)/sign-in");
+      router.replace("/(auth)/sign-in");
       return;
     }
     const program = programs.find((p) => p.id === programId);
     if (program?.isPremium) {
-      router.push({ pathname: "/checkout", params: { programId } });
+      router.replace({ pathname: "/checkout", params: { programId } });
       return;
     }
     setBusyId(programId);
@@ -78,9 +79,7 @@ export default function RecommendationsScreen() {
           title={t("authExtra.noProgramsYet")}
           message={t("authExtra.catalogEmpty")}
           actionLabel={t("authExtra.enterRashmat")}
-          onAction={() => router.replace("/(tabs)")}
-          secondaryLabel={t("programsTab.browseCreators")}
-          onSecondary={() => router.replace("/(tabs)/creators")}
+          onAction={enterAppHome}
         />
       ) : (
         <>
@@ -89,7 +88,7 @@ export default function RecommendationsScreen() {
               <Pressable
                 key={p.id}
                 style={styles.card}
-                onPress={() => router.push(`/program/${p.id}`)}
+                onPress={() => void startCamp(p.id)}
               >
                 <Image source={{ uri: p.coverUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
                 <LinearGradient
@@ -126,10 +125,10 @@ export default function RecommendationsScreen() {
                 onPress={() => void startCamp(primary.id)}
               />
               <Button
-                label={t("home.browseAllPrograms")}
+                label={t("authExtra.enterRashmat")}
                 variant="soft"
                 disabled={!!busyId}
-                onPress={() => router.replace("/(tabs)/programs")}
+                onPress={enterAppHome}
               />
             </View>
           ) : null}

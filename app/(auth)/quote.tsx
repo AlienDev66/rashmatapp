@@ -12,7 +12,7 @@ export default function QuoteScreen() {
   const quote = quotes[0];
 
   useEffect(() => {
-    const timer = setTimeout(() => router.replace("/(tabs)"), 2800);
+    const timer = setTimeout(() => router.replace("/(tabs)/home"), 2800);
     return () => clearTimeout(timer);
   }, []);
 
