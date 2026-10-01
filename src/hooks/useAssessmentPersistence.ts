@@ -1,3 +1,4 @@
+import { ASSESSMENT_TOTAL } from "@/src/data/assessment";
 import { isSupabaseConfigured, supabase } from "@/src/lib/supabase";
 import { useAuth } from "@/src/providers/AuthProvider";
 import type { AssessmentAnswers } from "@/src/types/auth";
@@ -11,6 +12,10 @@ type Draft = {
   answers: AssessmentAnswers;
   currentStep: number;
 };
+
+function clampStep(step: number) {
+  return Math.max(0, Math.min(step, ASSESSMENT_TOTAL - 1));
+}
 
 /**
  * Persists assessment progress locally always; syncs to Supabase when signed in.
@@ -36,7 +41,7 @@ export function useAssessmentPersistence() {
 
           if (data && !cancelled) {
             setAnswers((data.answers as AssessmentAnswers) ?? {});
-            setCurrentStep(data.current_step ?? 0);
+            setCurrentStep(clampStep(data.current_step ?? 0));
             hydrated.current = true;
             setReady(true);
             return;
@@ -47,7 +52,7 @@ export function useAssessmentPersistence() {
         if (raw && !cancelled) {
           const draft = JSON.parse(raw) as Draft;
           setAnswers(draft.answers ?? {});
-          setCurrentStep(draft.currentStep ?? 0);
+          setCurrentStep(clampStep(draft.currentStep ?? 0));
         }
       } finally {
         if (!cancelled) {
@@ -102,8 +107,9 @@ export function useAssessmentPersistence() {
 
   const goToStep = useCallback(
     (step: number) => {
-      setCurrentStep(step);
-      if (hydrated.current) void persist(answers, step);
+      const next = clampStep(step);
+      setCurrentStep(next);
+      if (hydrated.current) void persist(answers, next);
     },
     [answers, persist],
   );

@@ -9,7 +9,6 @@ export type AssessmentStep =
   | {
       id: string;
       type: "single";
-      /** i18n key resolved by the assessment screen. */
       questionKey: string;
       options: AssessmentOption[];
       skippable?: boolean;
@@ -44,6 +43,10 @@ const opt = (step: string, id: string, icon?: string): AssessmentOption => ({
   icon,
 });
 
+/**
+ * Production onboarding — short mat profile (not a 17-step quiz).
+ * Kept step ids stable so any existing drafts still map.
+ */
 export const ASSESSMENT_STEPS: AssessmentStep[] = [
   {
     id: "goal",
@@ -55,53 +58,6 @@ export const ASSESSMENT_STEPS: AssessmentStep[] = [
       opt("goal", "fitness", "💨"),
       opt("goal", "belt", "🥋"),
       opt("goal", "try", "📱"),
-    ],
-  },
-  {
-    id: "gender",
-    type: "gender",
-    questionKey: "assessment.q.gender",
-    skippable: true,
-  },
-  {
-    id: "age",
-    type: "number",
-    questionKey: "assessment.q.age",
-    unitKey: "assessment.unit.years",
-    min: 13,
-    max: 80,
-    defaultValue: 24,
-    skippable: true,
-  },
-  {
-    id: "weight",
-    type: "number",
-    questionKey: "assessment.q.weight",
-    unitKey: "assessment.unit.kg",
-    min: 40,
-    max: 180,
-    defaultValue: 70,
-    skippable: true,
-  },
-  {
-    id: "height",
-    type: "number",
-    questionKey: "assessment.q.height",
-    unitKey: "assessment.unit.cm",
-    min: 140,
-    max: 220,
-    defaultValue: 175,
-    skippable: true,
-  },
-  {
-    id: "level",
-    type: "single",
-    questionKey: "assessment.q.level",
-    options: [
-      opt("level", "beginner", "🌱"),
-      opt("level", "intermediate", "🔥"),
-      opt("level", "advanced", "⚡"),
-      opt("level", "pro", "🏆"),
     ],
   },
   {
@@ -118,6 +74,17 @@ export const ASSESSMENT_STEPS: AssessmentStep[] = [
     ],
   },
   {
+    id: "level",
+    type: "single",
+    questionKey: "assessment.q.level",
+    options: [
+      opt("level", "beginner", "🌱"),
+      opt("level", "intermediate", "🔥"),
+      opt("level", "advanced", "⚡"),
+      opt("level", "pro", "🏆"),
+    ],
+  },
+  {
     id: "experience",
     type: "single",
     questionKey: "assessment.q.experience",
@@ -126,29 +93,6 @@ export const ASSESSMENT_STEPS: AssessmentStep[] = [
       opt("experience", "months", "📆"),
       opt("experience", "year", "🗓️"),
       opt("experience", "years", "⏳"),
-    ],
-  },
-  {
-    id: "equipment",
-    type: "multi",
-    questionKey: "assessment.q.equipment",
-    options: [
-      opt("equipment", "gi", "🥋"),
-      opt("equipment", "nogi", "👕"),
-      opt("equipment", "mats", "🟦"),
-      opt("equipment", "pads", "🥊"),
-      opt("equipment", "academy", "🏢"),
-    ],
-  },
-  {
-    id: "location",
-    type: "single",
-    questionKey: "assessment.q.location",
-    options: [
-      opt("location", "academy", "🥋"),
-      opt("location", "home", "🏠"),
-      opt("location", "gym", "🥋"),
-      opt("location", "outdoors", "🌳"),
     ],
   },
   {
@@ -163,53 +107,6 @@ export const ASSESSMENT_STEPS: AssessmentStep[] = [
     ],
   },
   {
-    id: "duration",
-    type: "single",
-    questionKey: "assessment.q.duration",
-    options: [
-      opt("duration", "20", "⏱️"),
-      opt("duration", "45", "⌛"),
-      opt("duration", "60", "🕐"),
-      opt("duration", "90", "🕒"),
-    ],
-  },
-  {
-    id: "time",
-    type: "single",
-    questionKey: "assessment.q.time",
-    options: [
-      opt("time", "morning", "🌅"),
-      opt("time", "lunch", "☀️"),
-      opt("time", "evening", "🌆"),
-      opt("time", "night", "🌙"),
-      opt("time", "flex", "🔄"),
-    ],
-  },
-  {
-    id: "focus",
-    type: "single",
-    questionKey: "assessment.q.focus",
-    options: [
-      opt("focus", "technique", "🎯"),
-      opt("focus", "live", "🔥"),
-      opt("focus", "conditioning", "💨"),
-      opt("focus", "recovery", "🧘"),
-    ],
-  },
-  {
-    id: "injuries",
-    type: "single",
-    questionKey: "assessment.q.injuries",
-    skippable: true,
-    options: [
-      opt("injuries", "none", "✅"),
-      opt("injuries", "shoulder", "🦴"),
-      opt("injuries", "back", "🧘"),
-      opt("injuries", "knees", "🦵"),
-      opt("injuries", "other", "🩹"),
-    ],
-  },
-  {
     id: "coach",
     type: "single",
     questionKey: "assessment.q.coach",
@@ -217,16 +114,6 @@ export const ASSESSMENT_STEPS: AssessmentStep[] = [
       opt("coach", "creator", "⭐"),
       opt("coach", "mix", "🔀"),
       opt("coach", "explore", "🧭"),
-    ],
-  },
-  {
-    id: "notifications",
-    type: "single",
-    questionKey: "assessment.q.notifications",
-    options: [
-      opt("notifications", "yes", "🔔"),
-      opt("notifications", "light", "🔕"),
-      opt("notifications", "no", "🚫"),
     ],
   },
 ];

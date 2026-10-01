@@ -1,12 +1,28 @@
 import { colors } from "@/src/theme";
+import { HOME_HREF } from "@/src/lib/postAuthRoute";
 import { router } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 import { Pressable, StyleSheet } from "react-native";
 
-export function BackButton({ onPress }: { onPress?: () => void }) {
+function safeGoBack(fallbackHref: string = HOME_HREF) {
+  if (router.canGoBack()) {
+    router.back();
+    return;
+  }
+  router.replace(fallbackHref as typeof HOME_HREF);
+}
+
+export function BackButton({
+  onPress,
+  fallbackHref = HOME_HREF,
+}: {
+  onPress?: () => void;
+  /** Used when the stack has no history (e.g. after replace). */
+  fallbackHref?: string;
+}) {
   return (
     <Pressable
-      onPress={onPress ?? (() => router.back())}
+      onPress={onPress ?? (() => safeGoBack(fallbackHref))}
       style={({ pressed }) => [styles.btn, pressed && { opacity: 0.7 }]}
       hitSlop={12}
     >
