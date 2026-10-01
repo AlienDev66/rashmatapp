@@ -106,7 +106,7 @@ export default function WorkoutCompleteScreen() {
         emptyTitle={t("workoutDone.notFound")}
         emptyMessage={t("workoutDone.notFoundBody")}
         emptyActionLabel={t("workoutDone.backHome")}
-        emptyOnAction={() => router.replace("/(tabs)")}
+        emptyOnAction={() => router.replace("/(tabs)/home")}
         onRetry={reload}
       >
         {session ? (
@@ -175,7 +175,7 @@ export default function WorkoutCompleteScreen() {
                 <Button
                   label={t("workoutDone.backHome")}
                   variant="surface"
-                  onPress={() => router.replace("/(tabs)")}
+                  onPress={() => router.replace("/(tabs)/home")}
                 />
                 {session.programId ? (
                   <Pressable

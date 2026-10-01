@@ -50,7 +50,7 @@ export default function WorkoutLogsScreen() {
           title={t("logs.empty")}
           message={t("logs.emptyBody")}
           actionLabel={t("logs.backHub")}
-          onAction={() => router.replace("/(tabs)")}
+          onAction={() => router.replace("/(tabs)/home")}
         />
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.list}>
