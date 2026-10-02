@@ -1,9 +1,11 @@
 import type { NotificationPrefs } from "@/src/lib/profile";
+import { addInboxItem } from "@/src/lib/notificationInbox";
 import Constants from "expo-constants";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
 const WORKOUT_REMINDER_ID = "rashmat-workout-reminder";
+const TEST_REMINDER_ID = "rashmat-test-reminder";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -55,6 +57,15 @@ async function getExpoPushToken() {
   return token.data;
 }
 
+async function ensureAndroidChannel() {
+  if (Platform.OS === "android") {
+    await Notifications.setNotificationChannelAsync("default", {
+      name: "default",
+      importance: Notifications.AndroidImportance.DEFAULT,
+    });
+  }
+}
+
 async function scheduleDailyWorkoutReminder(body: string) {
   await Notifications.cancelScheduledNotificationAsync(WORKOUT_REMINDER_ID).catch(() => undefined);
   await Notifications.scheduleNotificationAsync({
@@ -76,8 +87,6 @@ async function cancelWorkoutReminders() {
   await Notifications.cancelScheduledNotificationAsync(WORKOUT_REMINDER_ID).catch(() => undefined);
 }
 
-const TEST_REMINDER_ID = "rashmat-test-reminder";
-
 /** Fire a local notification in a few seconds — for QA without changing device time. */
 export async function scheduleTestReminder(copy: {
   title: string;
@@ -89,13 +98,7 @@ export async function scheduleTestReminder(copy: {
     return { error: "settings.pushPermissionDenied" };
   }
 
-  if (Platform.OS === "android") {
-    await Notifications.setNotificationChannelAsync("default", {
-      name: "default",
-      importance: Notifications.AndroidImportance.DEFAULT,
-    });
-  }
-
+  await ensureAndroidChannel();
   await Notifications.cancelScheduledNotificationAsync(TEST_REMINDER_ID).catch(() => undefined);
   await Notifications.scheduleNotificationAsync({
     identifier: TEST_REMINDER_ID,
@@ -111,17 +114,60 @@ export async function scheduleTestReminder(copy: {
     },
   });
 
+  await addInboxItem({
+    title: copy.title,
+    body: copy.body,
+    type: "test",
+  });
+
   return { error: null };
 }
 
 /**
+ * Product event → in-app inbox + OS banner (if permission granted).
+ * Does not require remote push infrastructure.
+ */
+export async function notifyEvent(opts: {
+  title: string;
+  body: string;
+  type: "workout" | "unlock" | "system";
+  /** If false, only write inbox (no OS banner). Default true. */
+  presentBanner?: boolean;
+}) {
+  await addInboxItem({
+    title: opts.title,
+    body: opts.body,
+    type: opts.type,
+  });
+
+  if (opts.presentBanner === false) return { presented: false };
+
+  const { status } = await Notifications.getPermissionsAsync();
+  if (status !== "granted") return { presented: false };
+
+  await ensureAndroidChannel();
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: opts.title,
+      body: opts.body,
+      sound: true,
+    },
+    trigger: null,
+  });
+  return { presented: true };
+}
+
+/**
  * Apply OS permission + local reminders + Expo push token from Settings toggles.
- * Returns token to persist on the profile (for future remote creator/marketing pushes).
  */
 export async function applyNotificationPrefs(
   prefs: NotificationPrefs,
   copy: { reminderBody: string },
-): Promise<{ error: string | null; expoPushToken: string | null; permission: Notifications.PermissionStatus }> {
+): Promise<{
+  error: string | null;
+  expoPushToken: string | null;
+  permission: Notifications.PermissionStatus;
+}> {
   const needsOs =
     prefs.workout_reminders || prefs.creator_updates || prefs.marketing;
 
@@ -140,12 +186,7 @@ export async function applyNotificationPrefs(
       };
     }
 
-    if (Platform.OS === "android") {
-      await Notifications.setNotificationChannelAsync("default", {
-        name: "default",
-        importance: Notifications.AndroidImportance.DEFAULT,
-      });
-    }
+    await ensureAndroidChannel();
 
     try {
       expoPushToken = await getExpoPushToken();
@@ -161,4 +202,17 @@ export async function applyNotificationPrefs(
   }
 
   return { error: null, expoPushToken, permission };
+}
+
+/** Re-apply daily reminder after login without re-prompting. */
+export async function syncScheduledReminders(
+  prefs: NotificationPrefs,
+  copy: { reminderBody: string },
+) {
+  const { status } = await Notifications.getPermissionsAsync();
+  if (prefs.workout_reminders && status === "granted") {
+    await scheduleDailyWorkoutReminder(copy.reminderBody);
+  } else {
+    await cancelWorkoutReminders();
+  }
 }
