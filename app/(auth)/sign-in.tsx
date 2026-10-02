@@ -37,14 +37,19 @@ export default function SignInScreen() {
 
   const onOAuth = async (provider: "google" | "apple") => {
     setBusy(true);
-    const { error, profile } = await signInWithOAuth(provider);
+    const { error, profile, cancelled } = await signInWithOAuth(provider);
     setBusy(false);
+    if (cancelled) return;
     if (error) {
       Alert.alert(t("auth.failedTitle"), error);
       return;
     }
     if (!configured) return;
     const resolved = profile ?? (await refreshProfile());
+    if (!resolved) {
+      Alert.alert(t("auth.failedTitle"), t("auth.oauthIncomplete"));
+      return;
+    }
     replaceAfterAuth(resolved);
   };
 

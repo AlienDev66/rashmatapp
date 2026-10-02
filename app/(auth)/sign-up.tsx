@@ -34,7 +34,7 @@ export default function SignUpScreen() {
       return;
     }
     setBusy(true);
-    const { error, needsEmailConfirm, redirectTo } = await signUpWithEmail(
+    const { error, needsEmailConfirm } = await signUpWithEmail(
       email.trim(),
       password,
     );
@@ -44,19 +44,7 @@ export default function SignUpScreen() {
       return;
     }
     if (needsEmailConfirm) {
-      Alert.alert(
-        "Confirm your email",
-        [
-          "Open the confirmation link on this phone (Safari/Mail → Open in Expo Go).",
-          "",
-          "If Chrome opens a blank page, add this URL in Supabase → Auth → Redirect URLs:",
-          redirectTo ?? "(check Metro logs for Auth redirect URI)",
-          "",
-          "Also add: exp://**",
-          "",
-          "For faster Expo Go testing you can disable Confirm email in Supabase Auth settings.",
-        ].join("\n"),
-      );
+      Alert.alert(t("authExtra.confirmEmailTitle"), t("authExtra.confirmEmailBody"));
       return;
     }
     router.replace("/(auth)/assessment");
