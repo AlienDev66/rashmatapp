@@ -12,6 +12,7 @@
     "@supabase/supabase-js": "^2.116.0",
     "aes-js": "^3.1.2",
     "expo": "~57.0.24",
+    "expo-apple-authentication": "~57.0.2",
     "expo-auth-session": "~57.0.12",
     "expo-blur": "^57.0.3",
     "expo-clipboard": "^57.0.2",
@@ -59,7 +60,9 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "i18n:check": "node scripts/i18n-check.mjs"
+    "i18n:check": "node scripts/i18n-check.mjs",
+    "eas:build:ios": "npx eas-cli build --platform ios --profile production",
+    "eas:submit:ios": "npx eas-cli submit --platform ios --profile production --latest"
   },
   "private": true
 }
