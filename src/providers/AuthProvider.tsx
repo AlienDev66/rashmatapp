@@ -27,6 +27,7 @@ type NotificationPrefs = {
   workout_reminders?: boolean;
   creator_updates?: boolean;
   marketing?: boolean;
+  expo_push_token?: string | null;
 };
 
 type ProfileUpdate = {
