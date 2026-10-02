@@ -3,30 +3,46 @@ import { Button } from "@/src/components/ui/Button";
 import { TextField } from "@/src/components/ui/TextField";
 import { Screen } from "@/src/components/ui/Screen";
 import { demoUnlockProgram } from "@/src/data/studio";
-import { isFreeUnlockSoftLaunch, isStoreKitLive } from "@/src/lib/billing";
+import {
+  isFreeUnlockSoftLaunch,
+  isStoreKitLive,
+  isWebPaidUnlock,
+  programWebCheckoutUrl,
+} from "@/src/lib/billing";
 import { notifyEvent } from "@/src/lib/notifications";
 import { useAuth } from "@/src/providers/AuthProvider";
+import { useCatalog } from "@/src/hooks/useCatalog";
 import { colors, fonts, radii, spacing } from "@/src/theme";
 import { router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
-import { Alert, StyleSheet, Text, View } from "react-native";
+import { useMemo, useState } from "react";
+import { Alert, Linking, StyleSheet, Text, View } from "react-native";
 import { useT } from "@/src/i18n";
 
 /**
- * Soft launch: free unlock (no card fields) — App Store 3.1.1 safe.
- * Phase 2 (`billing.storeKitEnabled`): restore card UI + StoreKit / processor.
+ * Soft launch: free unlock for unpriced camps — App Store 3.1.1 safe.
+ * Priced premium → open web Stripe Checkout (no in-app payment).
+ * Phase 2 (`billing.storeKitEnabled`): StoreKit / processor for Pro.
  */
 export default function CheckoutScreen() {
   const t = useT();
   const { plan, programId } = useLocalSearchParams<{ plan?: string; programId?: string }>();
   const { user, updateProfile, refreshProfile } = useAuth();
+  const { data: catalog } = useCatalog();
   const [busy, setBusy] = useState(false);
   const storeKit = isStoreKitLive();
   const freeUnlock = isFreeUnlockSoftLaunch();
 
+  const program = useMemo(
+    () => catalog?.programs.find((p) => p.id === programId) ?? null,
+    [catalog, programId],
+  );
+
   const isProgramUnlock = !!programId;
+  const webPaid = program ? isWebPaidUnlock(program) : false;
   const label = isProgramUnlock
-    ? t("extra.programUnlockFree")
+    ? webPaid
+      ? t("extra.programUnlockWeb")
+      : t("extra.programUnlockFree")
     : plan === "monthly"
       ? t("extra.proMonthlyDemo")
       : t("extra.proYearlyDemo");
@@ -41,6 +57,11 @@ export default function CheckoutScreen() {
     // Soft launch: never present paid Pro activation without StoreKit.
     if (!isProgramUnlock && !storeKit) {
       Alert.alert(t("extra.billingSoonTitle"), t("extra.billingSoonBody"));
+      return;
+    }
+
+    if (programId && webPaid) {
+      await Linking.openURL(programWebCheckoutUrl(programId));
       return;
     }
 
@@ -91,7 +112,11 @@ export default function CheckoutScreen() {
       <View style={styles.top}>
         <BackButton />
         <Text style={styles.title}>
-          {freeUnlock && isProgramUnlock ? t("screens.unlock") : t("screens.checkout")}
+          {webPaid
+            ? t("screens.unlock")
+            : freeUnlock && isProgramUnlock
+              ? t("screens.unlock")
+              : t("screens.checkout")}
         </Text>
         <View style={{ width: 40 }} />
       </View>
@@ -100,7 +125,11 @@ export default function CheckoutScreen() {
         <Text style={styles.summaryLabel}>{t("screens.selected")}</Text>
         <Text style={styles.summaryValue}>{label}</Text>
         <Text style={styles.note}>
-          {freeUnlock && isProgramUnlock ? t("extra.checkoutFreeNote") : t("extra.checkoutNote")}
+          {webPaid
+            ? t("extra.checkoutWebNote")
+            : freeUnlock && isProgramUnlock
+              ? t("extra.checkoutFreeNote")
+              : t("extra.checkoutNote")}
         </Text>
       </View>
 
@@ -124,9 +153,11 @@ export default function CheckoutScreen() {
           label={
             busy
               ? t("extra.unlocking")
-              : freeUnlock && isProgramUnlock
-                ? t("extra.confirmFreeUnlock")
-                : t("extra.confirmDemo")
+              : webPaid
+                ? t("extra.confirmWebUnlock")
+                : freeUnlock && isProgramUnlock
+                  ? t("extra.confirmFreeUnlock")
+                  : t("extra.confirmDemo")
           }
           variant="accent"
           disabled={busy}

@@ -24,6 +24,8 @@ function mapProgram(row: {
   level: string;
   tags: string[];
   is_premium?: boolean;
+  price_cents?: number | null;
+  currency?: string | null;
   status?: "draft" | "published";
 }): Program {
   return {
@@ -39,6 +41,8 @@ function mapProgram(row: {
     level: row.level as Program["level"],
     tags: row.tags ?? [],
     isPremium: row.is_premium ?? false,
+    priceCents: row.price_cents ?? null,
+    currency: row.currency ?? "eur",
     status: row.status ?? "published",
   };
 }

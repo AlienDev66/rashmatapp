@@ -3,6 +3,7 @@ import { Button } from "@/src/components/ui/Button";
 import { EmptyState } from "@/src/components/ui/EmptyState";
 import { QueryGate } from "@/src/components/ui/QueryGate";
 import { sessionsForProgram } from "@/src/data/catalog";
+import { isWebPaidUnlock, programWebCheckoutUrl } from "@/src/lib/billing";
 import { enrollProgram } from "@/src/data/progress";
 import { restartProgram, toggleFavoriteProgram, fetchFavoriteProgramIds } from "@/src/data/favorites";
 import { useCatalog } from "@/src/hooks/useCatalog";
@@ -18,6 +19,7 @@ import { Calendar, Clock, GripVertical, RotateCcw, Star } from "lucide-react-nat
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -109,7 +111,19 @@ export default function ProgramDetailScreen() {
       router.push("/(auth)/sign-in");
       return;
     }
+    if (isWebPaidUnlock(program) && !enrolled) {
+      const url = programWebCheckoutUrl(program.id);
+      Alert.alert(t("programDetail.webAccessTitle"), t("programDetail.webAccessBody"), [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("programDetail.openWeb"),
+          onPress: () => void Linking.openURL(url),
+        },
+      ]);
+      return;
+    }
     if (program.isPremium && !enrolled) {
+      // Legacy soft-launch free unlock when camp is premium but not priced yet
       router.push({ pathname: "/checkout", params: { programId: program.id } });
       return;
     }
@@ -455,9 +469,11 @@ export default function ProgramDetailScreen() {
                             ?.trim() ?? t("programDetail.nextDay"),
                       })
                     : t("programDetail.continueTraining")
-                  : program.isPremium
-                    ? t("programDetail.unlockCamp")
-                    : t("programDetail.startCamp")
+                  : isWebPaidUnlock(program)
+                    ? t("programDetail.getAccessWeb")
+                    : program.isPremium
+                      ? t("programDetail.unlockCamp")
+                      : t("programDetail.startCamp")
             }
             variant="accent"
             disabled={enrolling}

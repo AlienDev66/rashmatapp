@@ -63,18 +63,21 @@ Password: RashmatReview2026!
 
 After sign-in:
 1. Complete Mat profile (short onboarding) if prompted
-2. Open Home / Train — start or browse a camp
+2. Open Home / Train — browse or start a camp
 3. Open Creators — follow a creator (optional)
-4. Open a program → Unlock free (soft launch, no payment) → Start session
+4. Open a free program → Start / Unlock free → play a session
 5. Progress / XP may update after completing a session
-6. Settings → Delete account is available (App Store 5.1.1)
+6. More → Notifications — enable alerts; optional “Send test reminder”
+7. Settings → Delete account is available (App Store 5.1.1)
+
+Sign-in also supports Sign in with Apple and Google.
 
 Creator Studio (publish programs) is web-based:
 https://rashmat.com/studio
 It does not need full review inside the iOS binary.
 
-This build is a free soft launch: no In-App Purchases and no card checkout.
-Camps unlock for free until StoreKit billing ships.
+This build is a free soft launch: no In-App Purchases and no card checkout in the app.
+Free camps unlock in-app. Paid creator camps (when priced) open Safari to rashmat.com — no Stripe WebView embedded in the app.
 
 Privacy: https://rashmat.com/privacy
 Terms: https://rashmat.com/terms
@@ -82,7 +85,6 @@ Support: https://rashmat.com/support
 
 Contact: support@rashmat.com
 ```
-
 ## Phase 2 (StoreKit) — keep ready
 
 Flip in `app/src/lib/billing.ts`:
@@ -95,21 +97,24 @@ Then restore priced paywall + checkout card/StoreKit path (already gated in `pay
 
 ## EAS build (iOS → TestFlight)
 
-After these compliance fixes, ship a new build (icon + review fixes):
-
 ```bash
 cd app
-npx eas-cli build --platform ios --profile production
-npx eas-cli submit --platform ios --profile production --latest
+bunx eas-cli build --platform ios --profile production --non-interactive
+bunx eas-cli submit --platform ios --profile production --latest --non-interactive
 ```
 
-### Connect checklist
+**Review binary (1.0.0):** build **#11** — after TestFlight processing, attach it in Connect.
 
-- [ ] Pricing → **Free**
-- [ ] Encryption → **No** (if asked)
-- [ ] Support / Privacy / Marketing URLs
-- [ ] Screenshots (avoid “Create & Monetize” until payouts exist)
-- [ ] App name without “monetize”
-- [ ] App Review demo account + updated notes
-- [ ] Build with delete-account + free unlock attached to 1.0
-- [ ] Submit for review
+> If Xcode fails with missing Push / `aps-environment`, delete the App Store provisioning profile in EAS and rebuild so a new profile is created with Push Notifications (required by `expo-notifications`).
+
+### Connect checklist (submit 1.0)
+
+- [ ] **App Information** — name `RASHMAT - Train with creators`, Support / Privacy / Marketing URLs
+- [ ] **Pricing and Availability** → **Free** · territories set
+- [ ] **Age Rating / App Privacy** — already done
+- [ ] **Screenshots** — iPhone 6.5" (no “monetize” copy)
+- [ ] **Build** — select TestFlight **1.0.0 (11)** (wait until Processing finishes)
+- [ ] **Export Compliance** → encryption **No**
+- [ ] **App Review Information** — Sign-in **Yes** + demo account + notes (section above)
+- [ ] **Version Release** → Manual (recommended)
+- [ ] **Submit for Review**

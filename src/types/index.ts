@@ -10,6 +10,9 @@ export type Program = {
   tags: string[];
   creatorId: string;
   isPremium?: boolean;
+  /** Price in cents when sold via Stripe Connect on the web. */
+  priceCents?: number | null;
+  currency?: string;
   status?: "draft" | "published";
   creatorUserId?: string | null;
 };
