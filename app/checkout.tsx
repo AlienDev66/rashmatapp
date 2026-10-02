@@ -4,6 +4,7 @@ import { TextField } from "@/src/components/ui/TextField";
 import { Screen } from "@/src/components/ui/Screen";
 import { demoUnlockProgram } from "@/src/data/studio";
 import { isFreeUnlockSoftLaunch, isStoreKitLive } from "@/src/lib/billing";
+import { notifyEvent } from "@/src/lib/notifications";
 import { useAuth } from "@/src/providers/AuthProvider";
 import { colors, fonts, radii, spacing } from "@/src/theme";
 import { router, useLocalSearchParams } from "expo-router";
@@ -51,6 +52,11 @@ export default function CheckoutScreen() {
         Alert.alert(t("extra.couldNotUnlock"), error);
         return;
       }
+      void notifyEvent({
+        title: t("screens.notifUnlockTitle"),
+        body: t("screens.notifUnlockBody"),
+        type: "unlock",
+      });
       try {
         const { fetchCatalog } = await import("@/src/data/catalog");
         const cat = await fetchCatalog();

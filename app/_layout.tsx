@@ -1,5 +1,6 @@
 import { I18nProvider } from "@/src/i18n";
 import { AuthProvider } from "@/src/providers/AuthProvider";
+import { NotificationBootstrap } from "@/src/providers/NotificationBootstrap";
 import { colors } from "@/src/theme";
 import { AlumniSans_700Bold_Italic } from "@expo-google-fonts/alumni-sans";
 import { AlumniSansSC_600SemiBold_Italic } from "@expo-google-fonts/alumni-sans-sc";
@@ -48,6 +49,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={styles.root}>
       <I18nProvider>
         <AuthProvider>
+          <NotificationBootstrap />
           <View style={styles.root}>
             <StatusBar style="light" />
             <Stack
