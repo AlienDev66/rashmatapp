@@ -24,7 +24,7 @@ Regenerate both:
 5. `05-program.png` — Structured Camps  
 6. `06-session.png` — Drill. Rest. Repeat.  
 7. `07-medals.png` — Progress that Sticks  
-8. `08-studio.png` — Create & Monetize  
+8. `08-studio.png` — Publish on the Web  
 
 In App Store Connect → version 1.0 → **Previews and Screenshots**:
 - iPhone 6.5" → drag `iphone-6.5/` (at least 3)
