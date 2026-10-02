@@ -1,4 +1,5 @@
 import { createSessionFromUrl, getAuthRedirectUri } from "@/src/lib/auth";
+import { signInWithOAuthProvider } from "@/src/lib/oauth";
 import { isSupabaseConfigured, supabase } from "@/src/lib/supabase";
 import type { Profile } from "@/src/types/auth";
 import type { Session, User } from "@supabase/supabase-js";
@@ -58,10 +59,12 @@ type AuthContextValue = {
   signUpWithEmail: (email: string, password: string) => Promise<SignUpResult>;
   signInWithOAuth: (
     provider: "google" | "apple",
-  ) => Promise<{ error: string | null; profile: Profile | null }>;
+  ) => Promise<{ error: string | null; profile: Profile | null; cancelled?: boolean }>;
   resetPassword: (email: string) => Promise<{ error: string | null }>;
   updatePassword: (password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
+  /** Permanently deletes the signed-in auth user + cascaded app data (App Store 5.1.1). */
+  deleteAccount: () => Promise<{ error: string | null }>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -263,46 +266,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [loadProfile]);
 
-  const signInWithOAuth = useCallback(async (provider: "google" | "apple") => {
-    if (!isSupabaseConfigured) {
-      return { error: "Add EXPO_PUBLIC_SUPABASE_URL and ANON_KEY to .env", profile: null };
-    }
-    const redirectTo = getAuthRedirectUri();
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo, skipBrowserRedirect: true },
-    });
-    if (error) return { error: error.message, profile: null };
-    if (!data.url) return { error: "No OAuth URL returned", profile: null };
-
-    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-    if (result.type === "success" && result.url) {
-      try {
-        const sessionResult = await createSessionFromUrl(result.url);
-        const nextSession = sessionResult.session;
-        if (nextSession) {
-          setSession(nextSession);
-          const profile = nextSession.user
-            ? await loadProfile(nextSession.user.id)
-            : null;
-          return { error: null, profile };
-        }
-      } catch (e) {
-        return {
-          error: e instanceof Error ? e.message : "OAuth failed",
-          profile: null,
-        };
-      }
-    }
-    // Browser cancelled or no session yet — fall back to current session
-    const { data: cur } = await supabase.auth.getSession();
-    if (cur.session?.user) {
-      setSession(cur.session);
-      const profile = await loadProfile(cur.session.user.id);
-      return { error: null, profile };
-    }
-    return { error: null, profile: null };
-  }, [loadProfile]);
+  const signInWithOAuth = useCallback(
+    async (provider: "google" | "apple") => signInWithOAuthProvider(provider, loadProfile),
+    [loadProfile],
+  );
 
   const resetPassword = useCallback(async (email: string) => {
     if (!isSupabaseConfigured) {
@@ -326,6 +293,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
   }, []);
 
+  const deleteAccount = useCallback(async () => {
+    if (!isSupabaseConfigured) {
+      return { error: "Add EXPO_PUBLIC_SUPABASE_URL and ANON_KEY to .env" };
+    }
+    const { error } = await supabase.rpc("delete_own_account");
+    if (error) return { error: error.message };
+    setProfile(null);
+    setSession(null);
+    await supabase.auth.signOut();
+    return { error: null };
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       session,
@@ -341,6 +320,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       resetPassword,
       updatePassword,
       signOut,
+      deleteAccount,
     }),
     [
       session,
@@ -354,6 +334,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       resetPassword,
       updatePassword,
       signOut,
+      deleteAccount,
     ],
   );
 
