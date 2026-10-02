@@ -1,6 +1,7 @@
 import { BackButton } from "@/src/components/ui/BackButton";
 import { Button } from "@/src/components/ui/Button";
 import { Screen } from "@/src/components/ui/Screen";
+import { isStoreKitLive } from "@/src/lib/billing";
 import { colors, fonts, radii, spacing } from "@/src/theme";
 import { router } from "expo-router";
 import { Check } from "lucide-react-native";
@@ -8,6 +9,7 @@ import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useT } from "@/src/i18n";
 
+/** Phase 2 plans — shown only when `billing.storeKitEnabled`. */
 const PLANS = [
   {
     id: "monthly",
@@ -25,9 +27,47 @@ const PLANS = [
   },
 ];
 
+/**
+ * Soft launch: no priced Go Pro (App Store 3.1.1).
+ * Phase 2: flip `billing.storeKitEnabled` to restore plan picker + checkout.
+ */
 export default function PaywallScreen() {
   const t = useT();
   const [plan, setPlan] = useState("yearly");
+  const storeKit = isStoreKitLive();
+
+  if (!storeKit) {
+    return (
+      <Screen>
+        <View style={styles.top}>
+          <BackButton />
+          <Text style={styles.title}>{t("paywall.accessTitle")}</Text>
+          <View style={{ width: 40 }} />
+        </View>
+
+        <Text style={styles.hero}>{t("paywall.softHero")}</Text>
+        <Text style={styles.sub}>{t("paywall.softSub")}</Text>
+
+        <View style={styles.softCard}>
+          {(["perkAllPrograms", "perkPlayer", "perkProgress"] as const).map((key) => (
+            <View key={key} style={styles.perk}>
+              <Check color={colors.accent} size={14} />
+              <Text style={styles.perkText}>{t(`extra.${key}`)}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={{ marginTop: "auto", gap: 12 }}>
+          <Button
+            label={t("paywall.browsePrograms")}
+            variant="accent"
+            onPress={() => router.replace("/(tabs)/programs")}
+          />
+          <Button label={t("paywall.maybeLater")} variant="ghost" onPress={() => router.back()} />
+        </View>
+      </Screen>
+    );
+  }
 
   return (
     <Screen>
@@ -103,6 +143,12 @@ const styles = StyleSheet.create({
     marginBottom: 22,
     fontSize: 14,
     lineHeight: 20,
+  },
+  softCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radii.xl,
+    padding: spacing.lg,
+    gap: 4,
   },
   plans: { gap: 12 },
   plan: {
