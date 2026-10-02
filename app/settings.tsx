@@ -4,11 +4,12 @@ import { Screen } from "@/src/components/ui/Screen";
 import { useI18n, useT } from "@/src/i18n";
 import { LOCALES, LOCALE_LABELS, type Locale } from "@/src/i18n/types";
 import { brand } from "@/src/lib/brand";
+import { applyNotificationPrefs } from "@/src/lib/notifications";
 import { parseNotificationPrefs } from "@/src/lib/profile";
 import { useAuth } from "@/src/providers/AuthProvider";
 import { colors, fonts, radii, spacing } from "@/src/theme";
 import { router } from "expo-router";
-import { Bell, ChevronRight, Globe, Lock, Moon, Shield, Trash2, User } from "lucide-react-native";
+import { Bell, ChevronRight, Globe, Lock, Shield, Trash2, User } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 
@@ -40,7 +41,23 @@ export default function SettingsScreen() {
     creator_updates: boolean;
     marketing: boolean;
   }) => {
-    await updateProfile({ notification_prefs: next });
+    const prev = parseNotificationPrefs(profile?.notification_prefs);
+    const applied = await applyNotificationPrefs(next, {
+      reminderBody: t("settings.reminderBody"),
+    });
+    if (applied.error) {
+      Alert.alert(t("settings.pushPermissionTitle"), t(applied.error));
+      setWorkoutReminders(prev.workout_reminders);
+      setCreatorUpdates(prev.creator_updates);
+      setMarketing(prev.marketing);
+      return;
+    }
+    await updateProfile({
+      notification_prefs: {
+        ...next,
+        expo_push_token: applied.expoPushToken,
+      },
+    });
   };
 
   const displayName = profile?.full_name || user?.email || t("common.athlete");
@@ -112,11 +129,6 @@ export default function SettingsScreen() {
             icon={<Bell color={colors.accent} size={18} />}
             label={t("settings.notificationCenter")}
             onPress={() => router.push("/notifications")}
-          />
-          <Row
-            icon={<Moon color={colors.accent} size={18} />}
-            label={t("settings.appearance")}
-            value={t("settings.appearanceDark")}
           />
           <Row
             icon={<Lock color={colors.accent} size={18} />}
