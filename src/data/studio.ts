@@ -1,3 +1,4 @@
+import { getPublishReadiness } from "@/src/lib/publishGate";
 import { isSupabaseConfigured, supabase } from "@/src/lib/supabase";
 import type { Database } from "@/src/types/database";
 
@@ -106,6 +107,18 @@ export async function updateProgram(
 }
 
 export async function publishProgram(programId: string, published: boolean) {
+  if (published) {
+    if (!isSupabaseConfigured) return { error: "studioScreens.supabaseMissing" };
+    const { data: program, error } = await supabase
+      .from("programs")
+      .select("*")
+      .eq("id", programId)
+      .maybeSingle();
+    if (error) return { error: error.message };
+    if (!program) return { error: "studioScreens.programNotFound" };
+    const gate = await getPublishReadiness(program as StudioProgram);
+    if (!gate.ready) return { error: "studioScreens.publishNotReady" };
+  }
   return updateProgram(programId, { status: published ? "published" : "draft" });
 }
 
