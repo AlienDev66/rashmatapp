@@ -14,8 +14,15 @@ import {
   type StudioSession,
   type StudentProgressRow,
 } from "@/src/data/studio";
+import { useT } from "@/src/i18n";
+import { pickProgramCover, uploadProgramCover } from "@/src/lib/coverUpload";
+import {
+  getPublishReadiness,
+  type PublishReadiness,
+} from "@/src/lib/publishGate";
 import { useAuth } from "@/src/providers/AuthProvider";
 import { colors, fonts, radii } from "@/src/theme";
+import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -26,7 +33,6 @@ import {
   Text,
   View,
 } from "react-native";
-import { useT } from "@/src/i18n";
 
 export default function StudioProgramDetailScreen() {
   const t = useT();
@@ -37,6 +43,7 @@ export default function StudioProgramDetailScreen() {
   const [students, setStudents] = useState<StudentProgressRow[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [gate, setGate] = useState<PublishReadiness | null>(null);
   const [busy, setBusy] = useState(false);
 
   const reload = useCallback(async () => {
@@ -50,6 +57,7 @@ export default function StudioProgramDetailScreen() {
     setSessions(sess.sessions);
     const studs = await fetchCreatorStudentProgress(programId);
     setStudents(studs.rows);
+    if (p) setGate(await getPublishReadiness(p));
   }, [programId, user]);
 
   useEffect(() => {
@@ -68,14 +76,57 @@ export default function StudioProgramDetailScreen() {
     else Alert.alert(t("studioScreens.saved"), t("studioScreens.programUpdated"));
   };
 
+  const onCover = async () => {
+    if (!programId || !user || !program) return;
+    const picked = await pickProgramCover();
+    if (picked.error) {
+      Alert.alert(t("common.error"), t(picked.error));
+      return;
+    }
+    if (!picked.uri) return;
+    setBusy(true);
+    const { url, error: upErr } = await uploadProgramCover(
+      user.id,
+      programId,
+      picked.uri,
+      picked.mimeType,
+    );
+    if (upErr || !url) {
+      setBusy(false);
+      Alert.alert(
+        t("studioScreens.saveFailed"),
+        upErr?.startsWith("studioScreens.") ? t(upErr) : upErr ?? t("studioScreens.uploadFailed"),
+      );
+      return;
+    }
+    const { error } = await updateProgram(programId, { cover_url: url });
+    setBusy(false);
+    if (error) {
+      Alert.alert(t("studioScreens.saveFailed"), error);
+      return;
+    }
+    const next = { ...program, cover_url: url };
+    setProgram(next);
+    setGate(await getPublishReadiness(next));
+  };
+
   const onTogglePublish = async () => {
     if (!programId || !program) return;
     const next = program.status !== "published";
+    if (next && gate && !gate.ready) {
+      const missing = gate.checks
+        .filter((c) => !c.ok)
+        .map((c) => c.hint ?? t(`studioScreens.gate.${c.id}.label`))
+        .join("\n");
+      Alert.alert(t("studioScreens.publishNotReady"), missing);
+      return;
+    }
     setBusy(true);
     const { error } = await publishProgram(programId, next);
     setBusy(false);
     if (error) {
-      Alert.alert(t("studioScreens.publishFailed"), error);
+      const msg = error.startsWith("studioScreens.") ? t(error) : error;
+      Alert.alert(t("studioScreens.publishFailed"), msg);
       return;
     }
     setProgram({ ...program, status: next ? "published" : "draft" });
@@ -94,6 +145,7 @@ export default function StudioProgramDetailScreen() {
       return;
     }
     setSessions((prev) => [...prev, session]);
+    if (program) setGate(await getPublishReadiness(program));
     router.push({ pathname: "/studio/cms", params: { programId, sessionId: session.id } });
   };
 
@@ -123,6 +175,24 @@ export default function StudioProgramDetailScreen() {
             ? t("studioScreens.publishedBadge")
             : t("studioScreens.draftBadge")}
         </Text>
+
+        <View style={styles.coverBlock}>
+          {program.cover_url ? (
+            <Image source={{ uri: program.cover_url }} style={styles.cover} contentFit="cover" />
+          ) : (
+            <View style={[styles.cover, styles.coverEmpty]}>
+              <Text style={styles.meta}>{t("studioScreens.noCover")}</Text>
+            </View>
+          )}
+          <Button
+            label={busy ? "…" : t("studioScreens.changeCover")}
+            variant="ghost"
+            disabled={busy}
+            onPress={() => void onCover()}
+            style={{ marginTop: 8 }}
+          />
+        </View>
+
         <View style={styles.form}>
           <TextField value={title} onChangeText={setTitle} placeholder={t("studioScreens.titlePlaceholder")} />
           <TextField value={description} onChangeText={setDescription} placeholder={t("studioScreens.descriptionPlaceholder")} />
@@ -133,6 +203,28 @@ export default function StudioProgramDetailScreen() {
           disabled={busy}
           onPress={() => void onSave()}
         />
+
+        {gate ? (
+          <View style={styles.gate}>
+            <Text style={styles.gateTitle}>{t("studioScreens.publishChecklist")}</Text>
+            {gate.checks.map((c) => (
+              <View key={c.id} style={styles.gateRow}>
+                <Text style={[styles.gateMark, c.ok ? styles.gateOk : styles.gateBad]}>
+                  {c.ok ? "✓" : "○"}
+                </Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.gateLabel}>{t(`studioScreens.gate.${c.id}.label`)}</Text>
+                  {!c.ok ? (
+                    <Text style={styles.gateHint}>
+                      {c.hint ?? t(`studioScreens.gate.${c.id}.hint`)}
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
         <Button
           label={
             program.status === "published"
@@ -140,7 +232,7 @@ export default function StudioProgramDetailScreen() {
               : t("studioScreens.publish")
           }
           variant="accent"
-          disabled={busy}
+          disabled={busy || (program.status !== "published" && Boolean(gate && !gate.ready))}
           style={{ marginTop: 10 }}
           onPress={() => void onTogglePublish()}
         />
@@ -225,7 +317,40 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     marginBottom: 12,
   },
+  coverBlock: { marginBottom: 14 },
+  cover: {
+    width: "100%",
+    height: 160,
+    borderRadius: radii.lg,
+    backgroundColor: colors.surface,
+  },
+  coverEmpty: { alignItems: "center", justifyContent: "center" },
   form: { gap: 10, marginBottom: 12 },
+  gate: {
+    marginTop: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    padding: 12,
+    gap: 10,
+  },
+  gateTitle: {
+    color: colors.white,
+    fontFamily: fonts.poppinsSemiBold,
+    fontSize: 13,
+    marginBottom: 2,
+  },
+  gateRow: { flexDirection: "row", gap: 10, alignItems: "flex-start" },
+  gateMark: { fontFamily: fonts.poppinsBold, fontSize: 14, width: 16 },
+  gateOk: { color: colors.accent },
+  gateBad: { color: colors.textMuted },
+  gateLabel: { color: colors.white, fontFamily: fonts.poppinsMedium, fontSize: 13 },
+  gateHint: {
+    color: colors.textMuted,
+    fontFamily: fonts.poppinsRegular,
+    fontSize: 11,
+    marginTop: 2,
+    lineHeight: 15,
+  },
   section: {
     color: colors.white,
     fontFamily: fonts.alumniBoldItalic,

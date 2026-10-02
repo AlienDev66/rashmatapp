@@ -1,3 +1,4 @@
+import { VideoField } from "@/src/components/studio/VideoField";
 import { BackButton } from "@/src/components/ui/BackButton";
 import { Button } from "@/src/components/ui/Button";
 import { EmptyState } from "@/src/components/ui/EmptyState";
@@ -10,13 +11,15 @@ import {
   fetchMyPrograms,
   fetchProgramSessions,
   fetchSessionExercises,
+  updateExercise,
   updateSession,
   type StudioExercise,
   type StudioProgram,
   type StudioSession,
 } from "@/src/data/studio";
+import { useT } from "@/src/i18n";
 import { useAuth } from "@/src/providers/AuthProvider";
-import { colors, fonts, radii, spacing } from "@/src/theme";
+import { colors, fonts, radii } from "@/src/theme";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -27,10 +30,9 @@ import {
   Text,
   View,
 } from "react-native";
-import { useT } from "@/src/i18n";
 
 /**
- * Full Studio CMS — best on web; usable on mobile for drill editing.
+ * Full Studio CMS — best on web; usable on mobile for drill editing + Storage video upload.
  */
 export default function StudioCmsScreen() {
   const t = useT();
@@ -45,10 +47,10 @@ export default function StudioCmsScreen() {
   const [sessionId, setSessionId] = useState(paramSessionId ?? "");
   const [exercises, setExercises] = useState<StudioExercise[]>([]);
   const [sessionTitle, setSessionTitle] = useState("");
-  const [muxId, setMuxId] = useState("");
+  const [sessionVideo, setSessionVideo] = useState({ muxPlaybackId: "", videoUrl: "" });
   const [drillName, setDrillName] = useState("");
   const [drillReps, setDrillReps] = useState("Reps: 8 8 8");
-  const [drillMux, setDrillMux] = useState("");
+  const [drillVideo, setDrillVideo] = useState({ muxPlaybackId: "", videoUrl: "" });
   const [busy, setBusy] = useState(false);
 
   const loadPrograms = useCallback(async () => {
@@ -91,12 +93,15 @@ export default function StudioCmsScreen() {
       if (!sessionId) {
         setExercises([]);
         setSessionTitle("");
-        setMuxId("");
+        setSessionVideo({ muxPlaybackId: "", videoUrl: "" });
         return;
       }
       const sess = sessions.find((s) => s.id === sessionId);
       setSessionTitle(sess?.title ?? "");
-      setMuxId(sess?.mux_playback_id ?? "");
+      setSessionVideo({
+        muxPlaybackId: sess?.mux_playback_id ?? "",
+        videoUrl: sess?.video_url ?? "",
+      });
       const { exercises: list } = await fetchSessionExercises(sessionId);
       if (!cancelled) setExercises(list);
     };
@@ -121,7 +126,8 @@ export default function StudioCmsScreen() {
     setBusy(true);
     const { error } = await updateSession(sessionId, {
       title: sessionTitle.trim(),
-      mux_playback_id: muxId.trim() || null,
+      mux_playback_id: sessionVideo.muxPlaybackId.trim() || null,
+      video_url: sessionVideo.videoUrl.trim() || null,
     });
     setBusy(false);
     if (error) Alert.alert(t("studioScreens.saveFailed"), error);
@@ -129,7 +135,12 @@ export default function StudioCmsScreen() {
       setSessions((prev) =>
         prev.map((s) =>
           s.id === sessionId
-            ? { ...s, title: sessionTitle.trim(), mux_playback_id: muxId.trim() || null }
+            ? {
+                ...s,
+                title: sessionTitle.trim(),
+                mux_playback_id: sessionVideo.muxPlaybackId.trim() || null,
+                video_url: sessionVideo.videoUrl.trim() || null,
+              }
             : s,
         ),
       );
@@ -164,7 +175,8 @@ export default function StudioCmsScreen() {
       name: drillName,
       reps: drillReps,
       sortOrder: exercises.length,
-      muxPlaybackId: drillMux || undefined,
+      muxPlaybackId: drillVideo.muxPlaybackId || undefined,
+      videoUrl: drillVideo.videoUrl || undefined,
     });
     setBusy(false);
     if (error || !exercise) {
@@ -173,7 +185,32 @@ export default function StudioCmsScreen() {
     }
     setExercises((p) => [...p, exercise]);
     setDrillName("");
-    setDrillMux("");
+    setDrillVideo({ muxPlaybackId: "", videoUrl: "" });
+  };
+
+  const onDrillVideoChange = async (exercise: StudioExercise, next: {
+    muxPlaybackId: string;
+    videoUrl: string;
+  }) => {
+    const { error } = await updateExercise(exercise.id, {
+      mux_playback_id: next.muxPlaybackId.trim() || null,
+      video_url: next.videoUrl.trim() || null,
+    });
+    if (error) {
+      Alert.alert(t("studioScreens.saveFailed"), error);
+      return;
+    }
+    setExercises((prev) =>
+      prev.map((e) =>
+        e.id === exercise.id
+          ? {
+              ...e,
+              mux_playback_id: next.muxPlaybackId.trim() || null,
+              video_url: next.videoUrl.trim() || null,
+            }
+          : e,
+      ),
+    );
   };
 
   const onDeleteDrill = (id: string) => {
@@ -261,18 +298,19 @@ export default function StudioCmsScreen() {
           </ScrollView>
         )}
 
-        {sessionId ? (
+        {sessionId && user ? (
           <View style={styles.panel}>
             <TextField
               value={sessionTitle}
               onChangeText={setSessionTitle}
               placeholder={t("studioScreens.sessionTitlePlaceholder")}
             />
-            <TextField
-              value={muxId}
-              onChangeText={setMuxId}
-              placeholder={t("studioScreens.sessionMuxPlaceholder")}
-              autoCapitalize="none"
+            <Text style={styles.fieldLabel}>{t("studioScreens.sessionVideo")}</Text>
+            <VideoField
+              userId={user.id}
+              value={sessionVideo}
+              onChange={setSessionVideo}
+              disabled={busy}
             />
             <Button
               label={busy ? "…" : t("studioScreens.saveSession")}
@@ -294,9 +332,18 @@ export default function StudioCmsScreen() {
             ) : (
               exercises.map((ex) => (
                 <View key={ex.id} style={styles.drill}>
-                  <View style={{ flex: 1 }}>
+                  <View style={{ flex: 1, gap: 8 }}>
                     <Text style={styles.drillName}>{ex.name}</Text>
                     <Text style={styles.meta}>{ex.reps}</Text>
+                    <VideoField
+                      userId={user.id}
+                      value={{
+                        muxPlaybackId: ex.mux_playback_id ?? "",
+                        videoUrl: ex.video_url ?? "",
+                      }}
+                      onChange={(next) => void onDrillVideoChange(ex, next)}
+                      disabled={busy}
+                    />
                   </View>
                   <Pressable onPress={() => onDeleteDrill(ex.id)}>
                     <Text style={styles.delete}>{t("commonExtra.delete")}</Text>
@@ -315,11 +362,12 @@ export default function StudioCmsScreen() {
               onChangeText={setDrillReps}
               placeholder={t("studioScreens.repsPlaceholder")}
             />
-            <TextField
-              value={drillMux}
-              onChangeText={setDrillMux}
-              placeholder={t("studioScreens.drillMuxPlaceholder")}
-              autoCapitalize="none"
+            <Text style={styles.fieldLabel}>{t("studioScreens.drillVideo")}</Text>
+            <VideoField
+              userId={user.id}
+              value={drillVideo}
+              onChange={setDrillVideo}
+              disabled={busy}
             />
             <Button
               label={busy ? "…" : t("studioScreens.addDrill")}
@@ -373,6 +421,11 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     marginBottom: 8,
   },
+  fieldLabel: {
+    color: colors.textMuted,
+    fontFamily: fonts.poppinsMedium,
+    fontSize: 12,
+  },
   chip: {
     backgroundColor: colors.surface,
     paddingHorizontal: 14,
@@ -388,12 +441,13 @@ const styles = StyleSheet.create({
   panel: { gap: 10 },
   drill: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     backgroundColor: colors.surface,
     borderRadius: radii.md,
     padding: 12,
+    gap: 10,
   },
   drillName: { color: colors.white, fontFamily: fonts.poppinsSemiBold },
   meta: { color: colors.textMuted, fontFamily: fonts.poppinsRegular, fontSize: 12, marginTop: 2 },
-  delete: { color: colors.danger, fontFamily: fonts.poppinsMedium, fontSize: 12 },
+  delete: { color: colors.danger, fontFamily: fonts.poppinsMedium, fontSize: 12, marginTop: 4 },
 });

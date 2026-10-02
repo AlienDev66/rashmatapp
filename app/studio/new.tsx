@@ -60,9 +60,12 @@ export default function StudioNewProgramScreen() {
       const pub = await publishProgram(program.id, true);
       if (pub.error) {
         setBusy(false);
+        const msg = pub.error.startsWith("studioScreens.")
+          ? t(pub.error)
+          : pub.error;
         Alert.alert(
           t("studioScreens.savedAsDraft"),
-          t("studioScreens.publishFailedMsg", { error: pub.error }),
+          t("studioScreens.publishFailedMsg", { error: msg }),
         );
         router.replace(`/studio/${program.id}`);
         return;
