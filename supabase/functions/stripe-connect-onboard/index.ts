@@ -1,8 +1,15 @@
-// Stripe Connect Express onboarding (Account Link).
-// Secrets: STRIPE_SECRET_KEY_TEST / STRIPE_SECRET_KEY_LIVE (or STRIPE_SECRET_KEY), SITE_URL
-// localhost → test keys + test Connect account; production → live keys + live account.
+// Stripe Connect onboarding via Accounts v2 + Account Links v2.
+// Live platforms without Accounts v1 eligibility must use this path.
+// Secrets: STRIPE_SECRET_KEY_TEST / STRIPE_SECRET_KEY_LIVE, SITE_URL
+// Optional: STRIPE_API_VERSION (default 2026-08-26.preview)
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import {
+  connectAccountReady,
+  stripeV1Form,
+  stripeV1Get,
+  stripeV2Json,
+} from "../_shared/stripeApi.ts";
 import {
   connectProfileFields,
   resolveSiteOrigin,
@@ -22,21 +29,90 @@ function json(body: unknown, status = 200) {
   });
 }
 
-async function stripeForm(secretKey: string, path: string, params: Record<string, string>) {
-  const body = new URLSearchParams(params);
-  const res = await fetch(`https://api.stripe.com/v1/${path}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${secretKey}`,
-      "Content-Type": "application/x-www-form-urlencoded",
+function displayNameFromUser(user: {
+  email?: string | null;
+  user_metadata?: Record<string, unknown>;
+}): string {
+  const meta = user.user_metadata ?? {};
+  const fromMeta =
+    (typeof meta.full_name === "string" && meta.full_name.trim()) ||
+    (typeof meta.name === "string" && meta.name.trim()) ||
+    "";
+  if (fromMeta) return fromMeta.slice(0, 120);
+  const email = user.email?.split("@")[0]?.trim();
+  return (email || "RASHMAT creator").slice(0, 120);
+}
+
+async function createConnectAccountV2(
+  secretKey: string,
+  opts: { email: string; displayName: string; userId: string; mode: string },
+) {
+  // Marketplace-style Express: recipient (destination charges) + merchant (card_payments).
+  return await stripeV2Json(secretKey, "core/accounts", {
+    contact_email: opts.email || undefined,
+    display_name: opts.displayName,
+    dashboard: "express",
+    defaults: {
+      responsibilities: {
+        fees_collector: "application",
+        losses_collector: "application",
+      },
     },
-    body,
+    configuration: {
+      merchant: {
+        capabilities: {
+          card_payments: { requested: true },
+        },
+      },
+      recipient: {
+        capabilities: {
+          stripe_balance: {
+            stripe_transfers: { requested: true },
+          },
+        },
+      },
+    },
+    include: [
+      "configuration.merchant",
+      "configuration.recipient",
+      "identity",
+      "defaults",
+      "requirements",
+    ],
   });
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data?.error?.message ?? `Stripe ${path} failed`);
+}
+
+async function createAccountOnboardingLink(
+  secretKey: string,
+  accountId: string,
+  returnUrl: string,
+  refreshUrl: string,
+) {
+  try {
+    return await stripeV2Json(secretKey, "core/account_links", {
+      account: accountId,
+      use_case: {
+        type: "account_onboarding",
+        account_onboarding: {
+          configurations: ["merchant", "recipient"],
+          return_url: returnUrl,
+          refresh_url: refreshUrl,
+        },
+      },
+    });
+  } catch (v2Err) {
+    // Legacy Express (Accounts v1) accounts — still used in sandbox test onboarding.
+    try {
+      return await stripeV1Form(secretKey, "account_links", {
+        account: accountId,
+        refresh_url: refreshUrl,
+        return_url: returnUrl,
+        type: "account_onboarding",
+      });
+    } catch {
+      throw v2Err;
+    }
   }
-  return data;
 }
 
 Deno.serve(async (req) => {
@@ -83,7 +159,7 @@ Deno.serve(async (req) => {
   }
 
   const fields = connectProfileFields(mode);
-  const selectCols = `id, is_creator, ${fields.accountId}, ${fields.chargesEnabled}, ${fields.detailsSubmitted}`;
+  const selectCols = `id, is_creator, full_name, ${fields.accountId}, ${fields.chargesEnabled}, ${fields.detailsSubmitted}`;
 
   const { data: profile, error: profileErr } = await admin
     .from("profiles")
@@ -99,64 +175,72 @@ Deno.serve(async (req) => {
   const returnUrl = `${site}/studio/settings?stripe=return`;
 
   const row = profile as Record<string, unknown>;
+  const nameFromProfile =
+    typeof row.full_name === "string" && row.full_name.trim()
+      ? row.full_name.trim()
+      : displayNameFromUser(userData.user);
+
   try {
     let accountId = (row[fields.accountId] as string | null) ?? null;
 
     if (!accountId) {
-      const account = await stripeForm(secretKey, "accounts", {
-        type: "express",
-        "capabilities[card_payments][requested]": "true",
-        "capabilities[transfers][requested]": "true",
-        "metadata[supabase_user_id]": userData.user.id,
-        "metadata[stripe_mode]": mode,
+      const account = await createConnectAccountV2(secretKey, {
         email: userData.user.email ?? "",
+        displayName: nameFromProfile,
+        userId: userData.user.id,
+        mode,
       });
-      accountId = account.id;
+      accountId = account.id as string;
       await admin
         .from("profiles")
         .update({
           [fields.accountId]: accountId,
-          [fields.chargesEnabled]: Boolean(account.charges_enabled),
-          [fields.detailsSubmitted]: Boolean(account.details_submitted),
+          [fields.chargesEnabled]: false,
+          [fields.detailsSubmitted]: false,
         })
         .eq("id", userData.user.id);
-    } else {
-      const res = await fetch(`https://api.stripe.com/v1/accounts/${accountId}`, {
-        headers: { Authorization: `Bearer ${secretKey}` },
-      });
-      const account = await res.json();
-      if (res.ok) {
-        await admin
-          .from("profiles")
-          .update({
-            [fields.chargesEnabled]: Boolean(account.charges_enabled),
-            [fields.detailsSubmitted]: Boolean(account.details_submitted),
-          })
-          .eq("id", userData.user.id);
-        if (account.charges_enabled) {
-          return json({
-            url: null,
-            ready: true,
-            mode,
-            charges_enabled: true,
-            details_submitted: Boolean(account.details_submitted),
-          });
-        }
-      }
     }
 
-    const link = await stripeForm(secretKey, "account_links", {
-      account: accountId!,
-      refresh_url: refreshUrl,
-      return_url: returnUrl,
-      type: "account_onboarding",
-    });
+    // v1 retrieve works for both v1 and v2 Account IDs (Stripe compatibility).
+    let chargesEnabled = false;
+    let detailsSubmitted = false;
+    try {
+      const account = await stripeV1Get(secretKey, `accounts/${accountId}`);
+      chargesEnabled = connectAccountReady(account);
+      detailsSubmitted = Boolean(account.details_submitted);
+      await admin
+        .from("profiles")
+        .update({
+          [fields.chargesEnabled]: chargesEnabled,
+          [fields.detailsSubmitted]: detailsSubmitted,
+        })
+        .eq("id", userData.user.id);
+
+      if (chargesEnabled) {
+        return json({
+          url: null,
+          ready: true,
+          mode,
+          charges_enabled: true,
+          details_submitted: detailsSubmitted,
+        });
+      }
+    } catch {
+      // Account may be brand-new; continue to Account Link.
+    }
+
+    const link = await createAccountOnboardingLink(
+      secretKey,
+      accountId!,
+      returnUrl,
+      refreshUrl,
+    );
 
     return json({
       url: link.url,
       ready: false,
       mode,
-      charges_enabled: false,
+      charges_enabled: chargesEnabled,
       account_id: accountId,
     });
   } catch (e) {
