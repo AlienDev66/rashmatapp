@@ -1,19 +1,25 @@
 import { supabase } from "@/src/lib/supabase";
-import { makeRedirectUri } from "expo-auth-session";
 import * as QueryParams from "expo-auth-session/build/QueryParams";
+import Constants, { ExecutionEnvironment } from "expo-constants";
+import * as Linking from "expo-linking";
+import { makeRedirectUri } from "expo-auth-session";
 import type { EmailOtpType, Session } from "@supabase/supabase-js";
 
 /**
- * Expo Go → exp://IP:PORT/--/auth/callback
- * Dev build / production → rashmat://auth/callback
+ * Redirect after Google/Apple OAuth (or email confirm).
  *
- * Add the printed value + wildcards to Supabase Auth → Redirect URLs:
- *   exp:// (wildcard) /--/auth/callback
- *   exp:// (wildcard)
- *   rashmat://auth/callback
- *   rashmat:// (wildcard)
+ * - Expo Go → `exp://…/--/auth/callback` (must NOT use rashmat:// or iOS opens TestFlight)
+ * - Dev client / TestFlight / App Store → `rashmat://auth/callback`
+ *
+ * Supabase Redirect URLs must include: rashmat://**, exp://**, https://rashmat.com/**
  */
 export function getAuthRedirectUri() {
+  // Expo Go is "StoreClient" — prefer Linking so we stay on exp://
+  if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) {
+    return Linking.createURL("auth/callback");
+  }
+
+  // Standalone / dev builds: explicit custom scheme
   return makeRedirectUri({
     scheme: "rashmat",
     path: "auth/callback",
@@ -30,9 +36,15 @@ export async function createSessionFromUrl(url: string): Promise<AuthLinkResult>
   const { params, errorCode } = QueryParams.getQueryParams(url);
   if (errorCode) throw new Error(errorCode);
 
+  const oauthError = params.error as string | undefined;
+  if (oauthError) {
+    const desc = (params.error_description as string | undefined)?.replace(/\+/g, " ");
+    throw new Error(desc || oauthError);
+  }
+
   const type = (params.type as string | undefined) ?? null;
 
-  // PKCE flow (newer Supabase email templates)
+  // PKCE flow (OAuth + newer email templates)
   if (params.code) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(params.code);
     if (error) throw error;
