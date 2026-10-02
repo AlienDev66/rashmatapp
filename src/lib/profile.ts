@@ -4,12 +4,15 @@ export type NotificationPrefs = {
   workout_reminders: boolean;
   creator_updates: boolean;
   marketing: boolean;
+  /** Expo push token for remote sends (creator updates / marketing). */
+  expo_push_token?: string | null;
 };
 
 export const defaultNotificationPrefs: NotificationPrefs = {
   workout_reminders: true,
   creator_updates: true,
   marketing: false,
+  expo_push_token: null,
 };
 
 export function parseNotificationPrefs(raw: Json | null | undefined): NotificationPrefs {
@@ -28,5 +31,7 @@ export function parseNotificationPrefs(raw: Json | null | undefined): Notificati
         : defaultNotificationPrefs.creator_updates,
     marketing:
       typeof o.marketing === "boolean" ? o.marketing : defaultNotificationPrefs.marketing,
+    expo_push_token:
+      typeof o.expo_push_token === "string" ? o.expo_push_token : null,
   };
 }
