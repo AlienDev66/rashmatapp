@@ -3,6 +3,8 @@ import { Button } from "@/src/components/ui/Button";
 import { QueryGate } from "@/src/components/ui/QueryGate";
 import { fetchSetHistory } from "@/src/data/progress";
 import { useWorkoutSession } from "@/src/hooks/useResource";
+import { useT } from "@/src/i18n";
+import { notifyEvent } from "@/src/lib/notifications";
 import { shareWorkoutStory } from "@/src/lib/shareStory";
 import { colors, fonts, radii, spacing } from "@/src/theme";
 import * as Haptics from "expo-haptics";
@@ -23,7 +25,6 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useT } from "@/src/i18n";
 
 function formatStoryDate(monthsShort: string, d = new Date()) {
   const months = monthsShort.split(",");
@@ -49,9 +50,21 @@ export default function WorkoutCompleteScreen() {
 
   const storyWidth = Math.min(280, screenW - 72);
 
+  const notifiedRef = useRef<string | null>(null);
+
   useEffect(() => {
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }, []);
+
+  useEffect(() => {
+    if (!session?.id || notifiedRef.current === session.id) return;
+    notifiedRef.current = session.id;
+    void notifyEvent({
+      title: t("screens.notifWorkoutTitle"),
+      body: t("screens.notifWorkoutBody", { title: session.title }),
+      type: "workout",
+    });
+  }, [session, t]);
 
   useEffect(() => {
     if (!session) return;

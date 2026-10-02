@@ -170,7 +170,7 @@ export default function MoreScreen() {
             icon={<MessageCircle color={colors.accent} size={20} />}
             title={t("more.community")}
             sub={brand.community.label}
-            onPress={() => void Linking.openURL(brand.community.discord)}
+            onPress={() => void Linking.openURL(brand.community.url)}
           />
           <MenuRow
             icon={<Gift color={colors.accent} size={20} />}
@@ -182,7 +182,7 @@ export default function MoreScreen() {
             icon={<Bell color={colors.accent} size={20} />}
             title={t("more.notifications")}
             sub={t("more.notificationsSub")}
-            onPress={() => router.push("/settings")}
+            onPress={() => router.push("/notifications")}
           />
           <MenuRow
             icon={<User color={colors.accent} size={20} />}

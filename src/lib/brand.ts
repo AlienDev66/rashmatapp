@@ -7,8 +7,9 @@ export const brand = {
   supportEmail: "support@rashmat.com",
   scheme: "rashmat",
   community: {
-    discord: "https://discord.gg/rashmat",
-    label: "RASHMAT Community",
+    /** Soft launch: Instagram is the live channel (no Discord invite yet). */
+    url: "https://www.instagram.com/rashmatapp/",
+    label: "@rashmatapp",
   },
   social: {
     instagram: "https://www.instagram.com/rashmatapp/",
@@ -16,4 +17,6 @@ export const brand = {
     x: "https://x.com/rashmatapp",
     handle: "@rashmatapp",
   },
+  /** Creator Studio on the marketing site. */
+  studioWebUrl: "https://rashmat.com/studio",
 } as const;

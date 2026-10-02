@@ -10,6 +10,7 @@ import {
   type StudentProgressRow,
 } from "@/src/data/studio";
 import { fetchMyCreatorFollowers } from "@/src/data/follows";
+import { brand } from "@/src/lib/brand";
 import { useAuth } from "@/src/providers/AuthProvider";
 import { colors, fonts, radii, spacing } from "@/src/theme";
 import { Link, router, useFocusEffect } from "expo-router";
@@ -141,7 +142,7 @@ export default function StudioHomeScreen() {
                   {
                     text: t("studioScreens.openCmsPath"),
                     onPress: () => {
-                      void Linking.openURL("/studio/cms");
+                      void Linking.openURL(`${brand.studioWebUrl}/cms`);
                     },
                   },
                 ],
