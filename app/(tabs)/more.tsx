@@ -1,4 +1,5 @@
 import { Avatar, Screen } from "@/src/components/ui/Screen";
+import { ConfirmSheet } from "@/src/components/ui/ConfirmSheet";
 import { EmptyState } from "@/src/components/ui/EmptyState";
 import { useCatalog } from "@/src/hooks/useCatalog";
 import { useProgress } from "@/src/hooks/useProgress";
@@ -27,6 +28,8 @@ export default function MoreScreen() {
   const { programs } = useCatalog();
   const { enrollments } = useProgress();
   const [stats, setStats] = useState({ streak: 0, sessions: 0, camps: 0 });
+  const [logoutOpen, setLogoutOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -51,8 +54,11 @@ export default function MoreScreen() {
   const displayPrograms =
     enrolledPrograms.length > 0 ? enrolledPrograms : programs.slice(0, 3);
 
-  const onLogout = async () => {
+  const onConfirmLogout = async () => {
+    setLoggingOut(true);
     await signOut();
+    setLoggingOut(false);
+    setLogoutOpen(false);
     router.replace("/(auth)/sign-in");
   };
 
@@ -88,7 +94,7 @@ export default function MoreScreen() {
               {[profile?.city, profile?.country].filter(Boolean).join(", ") || t("more.addLocation")}
             </Text>
             <Text style={styles.dot}>·</Text>
-            <Pressable style={styles.membership} onPress={() => router.push("/paywall")}>
+            <Pressable style={styles.membership} onPress={() => router.push("/subscriptions")}>
               <User color={colors.textMuted} size={12} />
               <Text style={styles.metaText}>{profile?.membership ?? t("more.basicMember")}</Text>
             </Pressable>
@@ -193,12 +199,12 @@ export default function MoreScreen() {
           <MenuRow
             icon={<CreditCard color={colors.accent} size={20} />}
             title={t("more.subscriptions")}
-            sub={t("more.subscriptionsSub")}
+            sub={t("more.subscriptionsSubSoft")}
             onPress={() => router.push("/subscriptions")}
           />
         </View>
 
-        <Pressable style={styles.logout} onPress={onLogout}>
+        <Pressable style={styles.logout} onPress={() => setLogoutOpen(true)}>
           <Text style={styles.logoutText}>{t("more.logout")}</Text>
           <LogOut color={colors.danger} size={16} />
         </Pressable>
@@ -207,6 +213,20 @@ export default function MoreScreen() {
           {brand.name} · {brand.social.handle} · {brand.domain}
         </Text>
       </ScrollView>
+
+      <ConfirmSheet
+        visible={logoutOpen}
+        title={t("more.logoutConfirmTitle")}
+        message={t("more.logoutConfirmBody")}
+        confirmLabel={t("more.logout")}
+        cancelLabel={t("common.cancel")}
+        tone="danger"
+        loading={loggingOut}
+        onConfirm={() => void onConfirmLogout()}
+        onClose={() => {
+          if (!loggingOut) setLogoutOpen(false);
+        }}
+      />
     </Screen>
   );
 }
