@@ -43,15 +43,24 @@ function displayNameFromUser(user: {
   return (email || "RASHMAT creator").slice(0, 120);
 }
 
+function connectDefaultCountry(): string {
+  const raw = (Deno.env.get("STRIPE_CONNECT_DEFAULT_COUNTRY") ?? "PT").trim().toUpperCase();
+  return /^[A-Z]{2}$/.test(raw) ? raw : "PT";
+}
+
 async function createConnectAccountV2(
   secretKey: string,
   opts: { email: string; displayName: string; userId: string; mode: string },
 ) {
   // Marketplace-style Express: recipient (destination charges) + merchant (card_payments).
+  // identity.country is required before merchant/recipient configuration.
   return await stripeV2Json(secretKey, "core/accounts", {
     contact_email: opts.email || undefined,
     display_name: opts.displayName,
     dashboard: "express",
+    identity: {
+      country: connectDefaultCountry(),
+    },
     defaults: {
       responsibilities: {
         fees_collector: "application",
